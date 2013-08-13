@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <declare-styleable name="PlaceOpenNowState">
+        <attr name="state_open_now" format="boolean"/>
+    </declare-styleable>
+
+</resources>

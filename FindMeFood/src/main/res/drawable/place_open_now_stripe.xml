@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="@color/place_open_now_stripe"/>
+        </shape>
+    </item>
+
+    <item>
+        <inset
+                android:drawable="@drawable/place_open_now_mask"
+                android:insetLeft="@dimen/place_open_now_stripe_width"
+                android:visible="true"/>
+    </item>
+
+</layer-list>
+

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<selector xmlns:android="http://schemas.android.com/apk/res/android"
+          xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <!--
+    We make the pressed and focused selector items place_open_now_mask so the ListView's own selector states show through.
+    -->
+
+    <item android:state_pressed="true"
+          android:drawable="@android:color/transparent"/>
+
+    <item android:state_focused="true"
+          android:drawable="@android:color/transparent"/>
+
+    <item app:state_open_now="true"
+          android:drawable="@drawable/place_open_now_stripe"/>
+
+    <item app:state_open_now="false"
+          android:drawable="@android:color/transparent"/>
+
+</selector>

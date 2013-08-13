@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <color name="place_list_item_open_now_mask">#f2f2f2</color>
+    <color name="place_open_now_stripe">#68b25a</color>
+    <color name="place_price_level">#ff5500</color>
+    <color name="place_subtitle">#666666</color>
+    <color name="place_distance">#333333</color>
+
+</resources>

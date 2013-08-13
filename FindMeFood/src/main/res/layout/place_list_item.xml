@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<org.codeandmagic.findmefood.ui.PlaceListItemView
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="@dimen/spacing_normal"
+        style="@style/Place.Background">
+
+    <TextView
+            android:id="@+id/title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentLeft="true"
+            android:layout_toLeftOf="@+id/distance"
+            style="@style/Place.Title"/>
+
+
+    <TextView
+            android:id="@+id/subtitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/title"
+            android:layout_alignParentLeft="true"
+            android:layout_toLeftOf="@+id/distance"
+            android:layout_marginTop="@dimen/spacing_small"
+            style="@style/Place.Subtitle"/>
+
+    <TextView
+            android:id="@+id/distance"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentRight="true"
+            android:layout_marginLeft="@dimen/spacing_small"
+            style="@style/Place.Distance"/>
+
+    <TextView android:id="@+id/price"
+              android:layout_width="wrap_content"
+              android:layout_height="wrap_content"
+              android:layout_below="@+id/distance"
+              android:layout_alignLeft="@+id/distance"
+              android:layout_alignParentRight="true"
+              android:layout_marginTop="@dimen/spacing_small"
+              style="@style/Place.Price" />
+
+</org.codeandmagic.findmefood.ui.PlaceListItemView>

@@ -1,0 +1,8 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+      xmlns:menu="http://schemas.android.com/apk/res-auto">
+    <item
+            android:id="@+id/action_reload"
+            android:title="@string/action_reload"
+            android:icon="@drawable/ic_action_reload"
+            menu:showAsAction="always"/>
+</menu>

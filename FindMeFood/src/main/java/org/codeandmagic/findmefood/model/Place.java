@@ -2,12 +2,23 @@ package org.codeandmagic.findmefood.model;
 
 import com.google.gson.annotations.SerializedName;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
  * Created by evelyne24.
  */
 public class Place {
+
+    public static final String TYPE_BAR = "bar";
+    public static final String TYPE_CAFE = "cafe";
+    public static final String TYPE_FOOD = "food";
+    public static final String TYPE_RESTAURANT = "restaurant";
+
+    public static final String[] DEFAULT_TYPES = {TYPE_BAR, TYPE_CAFE, TYPE_FOOD, TYPE_RESTAURANT};
+    public static final double DEFAULT_RADIUS = 1609.344; // 1 mile in meters
+    public static final String TYPES_DELIMITER = "|";
 
     private String id;
 
@@ -25,6 +36,15 @@ public class Place {
     private int priceLevel;
 
     private PlaceGeometry geometry;
+
+    @SerializedName("opening_hours")
+    private OpeningHours openingHours;
+
+    public Place() {
+        openingHours = new OpeningHours();
+        openingHours.setOpenNow(false);
+        types = Collections.emptyList();
+    }
 
     public String getId() {
         return id;
@@ -88,5 +108,13 @@ public class Place {
 
     public void setGeometry(PlaceGeometry geometry) {
         this.geometry = geometry;
+    }
+
+    public OpeningHours getOpeningHours() {
+        return openingHours;
+    }
+
+    public void setOpeningHours(OpeningHours openingHours) {
+        this.openingHours = openingHours;
     }
 }

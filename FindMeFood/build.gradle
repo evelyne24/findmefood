@@ -2,6 +2,7 @@ apply plugin: 'android'
 
 repositories {
     mavenCentral()
+    mavenLocal()
 }
 
 dependencies {
@@ -20,3 +21,6 @@ android {
         targetSdkVersion 18
     }
 }
+
+
+
