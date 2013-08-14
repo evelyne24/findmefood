@@ -53,6 +53,12 @@ public class PlacesListActivity extends ActionBarActivity implements LocationLis
     private void attachFragments() {
         Fragment placesListFragment = PlacesListFragment.instantiate(this, PlacesListFragment.class.getName());
         getSupportFragmentManager().beginTransaction().replace(R.id.places_list_fragment, placesListFragment).commit();
+
+        boolean dualPane = (findViewById(R.id.map_fragment) != null);
+        if(dualPane) {
+            Fragment mapFragment = PlacesMapFragment.instantiate(this, PlacesMapFragment.class.getName());
+            getSupportFragmentManager().beginTransaction().replace(R.id.map_fragment, mapFragment).commit();
+        }
     }
 
     private void restoreState(Bundle savedInstanceState) {

@@ -5,6 +5,7 @@ import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
+import android.support.v4.app.Fragment;
 import android.support.v4.app.ListFragment;
 import android.support.v4.app.LoaderManager.LoaderCallbacks;
 import android.support.v4.content.CursorLoader;
@@ -16,6 +17,7 @@ import android.text.TextUtils;
 import android.text.style.ImageSpan;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ListView;
 import android.widget.TextView;
 import org.codeandmagic.findmefood.R;
 import org.codeandmagic.findmefood.model.Place;
@@ -24,9 +26,8 @@ import java.util.Currency;
 import java.util.Locale;
 
 import static org.codeandmagic.findmefood.Consts.Loaders.LOAD_PLACES;
-import static org.codeandmagic.findmefood.provider.PlacesDatabase.Places;
 import static org.codeandmagic.findmefood.Consts.SP;
-import static org.codeandmagic.findmefood.Consts.NL;
+import static org.codeandmagic.findmefood.provider.PlacesDatabase.Places;
 
 /**
  * Created by evelyne24.
@@ -144,6 +145,17 @@ public class PlacesListFragment extends ListFragment implements LoaderCallbacks<
     }
 
 
+    @Override
+    public void onListItemClick(ListView l, View v, int position, long id) {
+        Fragment mapFragment = getActivity().getSupportFragmentManager().findFragmentById(R.id.map_fragment);
+        if(mapFragment == null) {
+            mapFragment = PlacesMapFragment.instantiate(getActivity(), PlacesMapFragment.class.getName());
+            getFragmentManager().beginTransaction().replace(R.id.places_list_fragment, mapFragment).addToBackStack(null).commit();
+        }
+        else {
+            //TODO refresh existing fragment
+        }
+    }
 
     private static class PlaceViewHolder {
         private final PlaceListItemView rootView;
