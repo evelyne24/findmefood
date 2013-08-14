@@ -6,9 +6,9 @@ package org.codeandmagic.findmefood;
 public interface Consts {
 
     String APP_TAG = "FindMeFood";
-    String SP = " ";
-    String NL = "\n";
-    int UNSET_VALUE = -1;
+    String SPACE = " ";
+    String NEWLINE = "\n";
+    int UNSET = -1;
 
     interface Http {
         String GET = "GET";
@@ -29,6 +29,7 @@ public interface Consts {
         String EXTRA_RADIUS = "radius";
         String EXTRA_TYPES = "types";
         String EXTRA_STATUS_CODE = "status_code";
+        String EXTRA_PLACE = "place";
     }
 
     interface SavedInstanceState {

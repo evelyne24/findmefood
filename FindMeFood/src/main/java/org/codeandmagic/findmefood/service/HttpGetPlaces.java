@@ -1,11 +1,11 @@
 package org.codeandmagic.findmefood.service;
 
-import android.text.TextUtils;
 import org.codeandmagic.findmefood.model.Place;
 
-import static org.codeandmagic.findmefood.Consts.UNSET_VALUE;
+import static org.codeandmagic.findmefood.Consts.UNSET;
 
 import java.text.MessageFormat;
+import java.util.List;
 
 /**
  * Created by evelyne24.
@@ -31,7 +31,7 @@ public class HttpGetPlaces extends HttpRequest {
         // Specify the default param values for this request
         addParam(PARAM_SENSOR, String.valueOf(true));
         addParam(PARAM_RADIUS, String.valueOf(Place.DEFAULT_RADIUS));
-        addParam(PARAM_TYPES, TextUtils.join(Place.TYPES_DELIMITER, Place.DEFAULT_TYPES));
+        addParam(PARAM_TYPES, Place.DEFAULT_TYPES);
     }
 
     @Override
@@ -40,10 +40,10 @@ public class HttpGetPlaces extends HttpRequest {
     }
 
     public HttpGetPlaces setLocation(double latitude, double longitude) {
-        if(Double.compare(UNSET_VALUE, latitude) == 0) {
+        if(Double.compare(UNSET, latitude) == 0) {
             throw new MalformedRequestException("Missing required param 'latitude'.");
         }
-        if(Double.compare(UNSET_VALUE, longitude) == 0) {
+        if(Double.compare(UNSET, longitude) == 0) {
             throw new MalformedRequestException("Missing required param 'longitude'.");
         }
         addParam(PARAM_LOCATION, MessageFormat.format(LOCATION_FORMAT, latitude, longitude));
@@ -58,9 +58,9 @@ public class HttpGetPlaces extends HttpRequest {
         return this;
     }
 
-    public HttpGetPlaces setTypes(String...types) {
+    public HttpGetPlaces setTypes(List<String> types) {
         if(types != null) {
-            addParam(PARAM_TYPES, TextUtils.join(Place.TYPES_DELIMITER, types));
+            addParam(PARAM_TYPES, Place.joinTypes(types));
         }
         return this;
     }

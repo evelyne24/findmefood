@@ -1,24 +1,33 @@
 package org.codeandmagic.findmefood.model;
 
+import android.os.Parcel;
+import android.os.Parcelable;
+import android.text.TextUtils;
 import com.google.gson.annotations.SerializedName;
 
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+
+import static org.codeandmagic.findmefood.Consts.SPACE;
 
 /**
  * Created by evelyne24.
  */
-public class Place {
+public class Place implements Parcelable {
+
+    private static final String TYPES_DELIMITER = "|";
 
     public static final String TYPE_BAR = "bar";
     public static final String TYPE_CAFE = "cafe";
     public static final String TYPE_FOOD = "food";
     public static final String TYPE_RESTAURANT = "restaurant";
 
-    public static final String[] DEFAULT_TYPES = {TYPE_BAR, TYPE_CAFE, TYPE_FOOD, TYPE_RESTAURANT};
+    public static final String DEFAULT_TYPES = TextUtils.join(TYPES_DELIMITER,
+            new String[]{TYPE_BAR, TYPE_CAFE, TYPE_FOOD, TYPE_RESTAURANT});
+
     public static final double DEFAULT_RADIUS = 1609.344; // 1 mile in meters
-    public static final String TYPES_DELIMITER = "|";
+
 
     private String id;
 
@@ -44,6 +53,18 @@ public class Place {
         openingHours = new OpeningHours();
         openingHours.setOpenNow(false);
         types = Collections.emptyList();
+    }
+
+    public Place(Parcel in) {
+        id = in.readString();
+        name = in.readString();
+        vicinity = in.readString();
+        iconUrl = in.readString();
+        setTypes(in.readString());
+        rating = in.readDouble();
+        priceLevel = in.readInt();
+        openingHours = in.readParcelable(OpeningHours.class.getClassLoader());
+        geometry = in.readParcelable(PlaceGeometry.class.getClassLoader());
     }
 
     public String getId() {
@@ -82,8 +103,16 @@ public class Place {
         return types;
     }
 
+    public String getTypesAsString() {
+        return joinTypes(types);
+    }
+
     public void setTypes(List<String> types) {
         this.types = types;
+    }
+
+    public void setTypes(String types) {
+        this.types = Arrays.asList(TextUtils.split(types, TYPES_DELIMITER));
     }
 
     public double getRating() {
@@ -102,6 +131,16 @@ public class Place {
         this.priceLevel = priceLevel;
     }
 
+    /**
+     * We show as many currency symbols as the price level.
+     * @param currency
+     * @return
+     */
+    public String formatPriceLevel(String currency) {
+        int length = (priceLevel == 0) ? 1 : priceLevel;
+        return String.format("%" + length + "s", currency).replaceAll(SPACE, currency);
+    }
+
     public PlaceGeometry getGeometry() {
         return geometry;
     }
@@ -117,4 +156,74 @@ public class Place {
     public void setOpeningHours(OpeningHours openingHours) {
         this.openingHours = openingHours;
     }
+
+    public static String joinTypes(List<String> types) {
+        return TextUtils.join(TYPES_DELIMITER, types);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        Place place = (Place) o;
+
+        if (priceLevel != place.priceLevel) return false;
+        if (Double.compare(place.rating, rating) != 0) return false;
+        if (geometry != null ? !geometry.equals(place.geometry) : place.geometry != null) return false;
+        if (iconUrl != null ? !iconUrl.equals(place.iconUrl) : place.iconUrl != null) return false;
+        if (!id.equals(place.id)) return false;
+        if (name != null ? !name.equals(place.name) : place.name != null) return false;
+        if (openingHours != null ? !openingHours.equals(place.openingHours) : place.openingHours != null) return false;
+        if (types != null ? !types.equals(place.types) : place.types != null) return false;
+        if (vicinity != null ? !vicinity.equals(place.vicinity) : place.vicinity != null) return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result;
+        long temp;
+        result = id.hashCode();
+        result = 31 * result + (name != null ? name.hashCode() : 0);
+        result = 31 * result + (iconUrl != null ? iconUrl.hashCode() : 0);
+        result = 31 * result + (vicinity != null ? vicinity.hashCode() : 0);
+        result = 31 * result + (types != null ? types.hashCode() : 0);
+        temp = Double.doubleToLongBits(rating);
+        result = 31 * result + (int) (temp ^ (temp >>> 32));
+        result = 31 * result + priceLevel;
+        result = 31 * result + (geometry != null ? geometry.hashCode() : 0);
+        result = 31 * result + (openingHours != null ? openingHours.hashCode() : 0);
+        return result;
+    }
+
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    @Override
+    public void writeToParcel(Parcel dest, int flags) {
+        dest.writeString(id);
+        dest.writeString(name);
+        dest.writeString(vicinity);
+        dest.writeString(iconUrl);
+        dest.writeString(getTypesAsString());
+        dest.writeDouble(rating);
+        dest.writeInt(priceLevel);
+        dest.writeParcelable(openingHours, 0);
+        dest.writeParcelable(geometry, 0);
+    }
+
+    public static final Parcelable.Creator<Place> CREATOR
+            = new Parcelable.Creator<Place>() {
+        public Place createFromParcel(Parcel in) {
+            return new Place(in);
+        }
+
+        public Place[] newArray(int size) {
+            return new Place[size];
+        }
+    };
 }

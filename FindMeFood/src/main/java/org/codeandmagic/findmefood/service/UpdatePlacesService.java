@@ -10,12 +10,13 @@ import org.codeandmagic.findmefood.model.Place;
 import org.codeandmagic.findmefood.provider.PlacesDatabase;
 
 import java.text.MessageFormat;
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.codeandmagic.findmefood.Consts.APP_TAG;
 import static org.codeandmagic.findmefood.Consts.Http.STATUS_CODE_EXCEPTION;
 import static org.codeandmagic.findmefood.Consts.Intents.*;
-import static org.codeandmagic.findmefood.Consts.UNSET_VALUE;
+import static org.codeandmagic.findmefood.Consts.UNSET;
 
 /**
  * Created by evelyne24.
@@ -38,10 +39,10 @@ public class UpdatePlacesService extends IntentService {
 
     @Override
     protected void onHandleIntent(Intent intent) {
-        double latitude = intent.getDoubleExtra(EXTRA_LATITUDE, UNSET_VALUE);
-        double longitude = intent.getDoubleExtra(EXTRA_LONGITUDE, UNSET_VALUE);
+        double latitude = intent.getDoubleExtra(EXTRA_LATITUDE, UNSET);
+        double longitude = intent.getDoubleExtra(EXTRA_LONGITUDE, UNSET);
         double radius = intent.getDoubleExtra(EXTRA_RADIUS, Place.DEFAULT_RADIUS);
-        String[] types = intent.getStringArrayExtra(EXTRA_TYPES);
+        ArrayList<String> types = intent.getStringArrayListExtra(EXTRA_TYPES);
 
         HttpGetPlaces request = new HttpGetPlaces()
                 .setLocation(latitude, longitude)
