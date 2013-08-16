@@ -7,6 +7,11 @@
 
     <string name="google_maps_api_key">AIzaSyCzo0WCQvygLDxDtoyty3slvNIUbPoyQq8</string>
     <string name="google_places_api_key">AIzaSyA80xV_OSCkpQ9I4MUjWdg4L7_UBXnT-7E</string>
-    <string name="google_maps_not_supported">Google Maps v2 not supported!</string>
+
+    <string name="google_maps_not_supported">Google Maps v2 not supported.</string>
+    <string name="google_play_services_connection_failed">Cannot connect to Google Play Services.</string>
+    <string name="waiting_for_location_update">Please wait while we\'re updating your location.</string>
+    <string name="waiting_to_connect_to_play_services">Waiting to connect to Google Play Services</string>
+    <string name="update_already_requested">An update has already been requested</string>
 
 </resources>

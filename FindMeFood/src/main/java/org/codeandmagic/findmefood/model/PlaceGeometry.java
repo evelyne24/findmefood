@@ -33,7 +33,7 @@ public class PlaceGeometry implements Parcelable {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (o == null || PlaceGeometry.class != o.getClass()) return false;
 
         PlaceGeometry that = (PlaceGeometry) o;
 

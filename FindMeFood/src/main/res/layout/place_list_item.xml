@@ -1,12 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 
-<org.codeandmagic.findmefood.ui.PlaceListItemView
+<RelativeLayout
         xmlns:android="http://schemas.android.com/apk/res/android"
         android:orientation="vertical"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:padding="@dimen/spacing_normal"
-        style="@style/Place.Background">
+        android:padding="@dimen/spacing_normal">
+
+
+    <View android:id="@+id/open_now"
+          android:layout_width="@dimen/place_open_now_stripe_width"
+          android:layout_height="match_parent"
+          android:background="@color/place_open_now_stripe" />
 
     <TextView
             android:id="@+id/title"
@@ -44,4 +49,4 @@
               android:layout_marginTop="@dimen/spacing_small"
               style="@style/Place.Price" />
 
-</org.codeandmagic.findmefood.ui.PlaceListItemView>
+</RelativeLayout>

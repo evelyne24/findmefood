@@ -1,11 +1,12 @@
 package org.codeandmagic.findmefood.service;
 
+import android.text.TextUtils;
 import org.codeandmagic.findmefood.model.Place;
 
-import static org.codeandmagic.findmefood.Consts.UNSET;
-
 import java.text.MessageFormat;
-import java.util.List;
+
+import static org.codeandmagic.findmefood.Consts.UNSET;
+import static org.codeandmagic.findmefood.Consts.UserSettings.DEFAULT_RADIUS;
 
 /**
  * Created by evelyne24.
@@ -19,6 +20,7 @@ public class HttpGetPlaces extends HttpRequest {
     private static final String PARAM_RADIUS = "radius";
     private static final String PARAM_SENSOR = "sensor";
     private static final String PARAM_TYPES = "types";
+    private static final String PARAM_NEXT_PAGE_TOKEN = "pagetoken";
     private static final String LOCATION_FORMAT = "{0},{1}";
 
     public HttpGetPlaces() {
@@ -30,7 +32,7 @@ public class HttpGetPlaces extends HttpRequest {
 
         // Specify the default param values for this request
         addParam(PARAM_SENSOR, String.valueOf(true));
-        addParam(PARAM_RADIUS, String.valueOf(Place.DEFAULT_RADIUS));
+        addParam(PARAM_RADIUS, String.valueOf(DEFAULT_RADIUS));
         addParam(PARAM_TYPES, Place.DEFAULT_TYPES);
     }
 
@@ -58,9 +60,16 @@ public class HttpGetPlaces extends HttpRequest {
         return this;
     }
 
-    public HttpGetPlaces setTypes(List<String> types) {
-        if(types != null) {
-            addParam(PARAM_TYPES, Place.joinTypes(types));
+    public HttpGetPlaces setTypes(String types) {
+        if(!TextUtils.isEmpty(types)) {
+            addParam(PARAM_TYPES, types);
+        }
+        return this;
+    }
+
+    public HttpGetPlaces setNextPageToken(String nextPageToken) {
+        if(!TextUtils.isEmpty(nextPageToken)) {
+            addParam(PARAM_NEXT_PAGE_TOKEN, nextPageToken);
         }
         return this;
     }

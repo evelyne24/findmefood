@@ -26,9 +26,6 @@ public class Place implements Parcelable {
     public static final String DEFAULT_TYPES = TextUtils.join(TYPES_DELIMITER,
             new String[]{TYPE_BAR, TYPE_CAFE, TYPE_FOOD, TYPE_RESTAURANT});
 
-    public static final double DEFAULT_RADIUS = 1609.344; // 1 mile in meters
-
-
     private String id;
 
     private String name;
@@ -164,7 +161,7 @@ public class Place implements Parcelable {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (o == null || Place.class != o.getClass()) return false;
 
         Place place = (Place) o;
 

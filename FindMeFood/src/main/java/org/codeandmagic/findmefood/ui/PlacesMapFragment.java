@@ -1,7 +1,6 @@
 package org.codeandmagic.findmefood.ui;
 
 import android.database.Cursor;
-import android.location.Location;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
@@ -27,31 +26,25 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static com.google.android.gms.maps.GoogleMap.*;
+import static com.google.android.gms.maps.GoogleMap.OnCameraChangeListener;
 import static org.codeandmagic.findmefood.Consts.APP_TAG;
 import static org.codeandmagic.findmefood.Consts.Intents.EXTRA_PLACE;
 import static org.codeandmagic.findmefood.Consts.Loaders.LOAD_PLACES;
-import static org.codeandmagic.findmefood.Consts.SavedInstanceState.MY_LOCATION;
 import static org.codeandmagic.findmefood.provider.PlacesDatabase.Places;
 
 /**
  * Created by evelyne24.
  */
-public class PlacesMapFragment extends Fragment implements OnMyLocationChangeListener, OnInfoWindowClickListener,
-        OnCameraChangeListener, LoaderCallbacks<Cursor> {
+public class PlacesMapFragment extends Fragment implements OnCameraChangeListener, LoaderCallbacks<Cursor> {
 
     private static final int MAP_ZOOM = 13;
     private GoogleMap googleMap;
-    private LatLng myLocation;
     private BitmapDescriptor iconPin;
     private BitmapDescriptor iconCurrentPin;
-
     private Map<Place, Marker> placeMarkers = new HashMap<Place, Marker>();
     private Place currentPlace;
 
-    public static PlacesMapFragment newInstance(Place place) {
-        Bundle args = new Bundle();
-        args.putParcelable(EXTRA_PLACE, place);
+    public static PlacesMapFragment newInstance(Bundle args) {
         PlacesMapFragment fragment = new PlacesMapFragment();
         fragment.setArguments(args);
         return fragment;
@@ -65,7 +58,6 @@ public class PlacesMapFragment extends Fragment implements OnMyLocationChangeLis
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
-        restoreInstanceState(savedInstanceState);
         initBitmapMarkers();
         setupMapFragment();
     }
@@ -81,12 +73,6 @@ public class PlacesMapFragment extends Fragment implements OnMyLocationChangeLis
         }
     }
 
-    private void restoreInstanceState(Bundle savedInstanceState) {
-        if (savedInstanceState != null) {
-            myLocation = savedInstanceState.getParcelable(MY_LOCATION);
-        }
-    }
-
     @Override
     public void onResume() {
         super.onResume();
@@ -96,13 +82,9 @@ public class PlacesMapFragment extends Fragment implements OnMyLocationChangeLis
     @Override
     public void onPause() {
         super.onPause();
-        setMyLocationUpdatesEnabled(false);
-    }
-
-    @Override
-    public void onSaveInstanceState(Bundle outState) {
-        outState.putParcelable(MY_LOCATION, myLocation);
-        super.onSaveInstanceState(outState);
+        if (googleMap != null) {
+            googleMap.setMyLocationEnabled(false);
+        }
     }
 
     private void setupMapFragment() {
@@ -124,26 +106,11 @@ public class PlacesMapFragment extends Fragment implements OnMyLocationChangeLis
         }
 
         googleMap.getUiSettings().setZoomControlsEnabled(true);
-        googleMap.setOnInfoWindowClickListener(this);
         googleMap.setOnCameraChangeListener(this);
-        setMyLocationUpdatesEnabled(true);
+        googleMap.setMyLocationEnabled(true);
 
         // initLoader gets triggered before the GoogleMap is ready after a rotation!
         getLoaderManager().restartLoader(LOAD_PLACES, null, this);
-    }
-
-    private void setMyLocationUpdatesEnabled(boolean enabled) {
-        googleMap.setMyLocationEnabled(enabled);
-        googleMap.setOnMyLocationChangeListener(enabled ? this : null);
-    }
-
-    @Override
-    public void onMyLocationChange(Location location) {
-        myLocation = new LatLng(location.getLatitude(), location.getLongitude());
-
-        if (googleMap.getMyLocation() == null) {
-            centerMapOnLocation(myLocation);
-        }
     }
 
     private void centerMapOnLocation(LatLng location) {
@@ -152,17 +119,8 @@ public class PlacesMapFragment extends Fragment implements OnMyLocationChangeLis
     }
 
     @Override
-    public void onInfoWindowClick(Marker marker) {
-
-    }
-
-    @Override
     public void onCameraChange(CameraPosition cameraPosition) {
-        myLocation = cameraPosition.target;
 
-        if (myLocation.latitude != 0 && myLocation.longitude != 0) {
-
-        }
     }
 
     private double computeVisibleRadius(LatLngBounds latLngBounds) {
@@ -245,10 +203,9 @@ public class PlacesMapFragment extends Fragment implements OnMyLocationChangeLis
         }
     }
 
-
     public void refreshCurrentPlace(Place place) {
         // Swap the previous current marker from red to blue
-        if(currentPlace != null) {
+        if (currentPlace != null) {
             Marker prevCurrentMarker = placeMarkers.get(currentPlace);
             prevCurrentMarker.remove();
             placeMarkers.put(currentPlace, getMarker(currentPlace));
@@ -256,7 +213,7 @@ public class PlacesMapFragment extends Fragment implements OnMyLocationChangeLis
 
         // Swap the new current marker from blue to red
         Marker marker = placeMarkers.get(place);
-        if(marker != null) {
+        if (marker != null) {
             marker.remove();
         }
         currentPlace = place;

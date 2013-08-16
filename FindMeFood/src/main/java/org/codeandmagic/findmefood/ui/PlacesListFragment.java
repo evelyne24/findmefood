@@ -1,32 +1,40 @@
 package org.codeandmagic.findmefood.ui;
 
 import android.content.Context;
+import android.content.Intent;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.location.Location;
 import android.os.Bundle;
 import android.support.v4.app.ListFragment;
 import android.support.v4.app.LoaderManager.LoaderCallbacks;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
 import android.support.v4.widget.CursorAdapter;
-import android.support.v7.app.ActionBarActivity;
 import android.text.Spannable;
 import android.text.SpannableStringBuilder;
 import android.text.TextUtils;
 import android.text.style.ImageSpan;
+import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AbsListView;
+import android.widget.AbsListView.OnScrollListener;
 import android.widget.ListView;
 import android.widget.TextView;
 import org.codeandmagic.findmefood.R;
 import org.codeandmagic.findmefood.model.Place;
 import org.codeandmagic.findmefood.provider.PlacesDatabase;
+import org.codeandmagic.findmefood.service.PlacesUpdateService;
 
+import java.text.MessageFormat;
 import java.util.Currency;
 import java.util.List;
 import java.util.Locale;
 
+import static org.codeandmagic.findmefood.Consts.APP_TAG;
+import static org.codeandmagic.findmefood.Consts.Intents.*;
 import static org.codeandmagic.findmefood.Consts.Loaders.LOAD_PLACES;
 import static org.codeandmagic.findmefood.Consts.SPACE;
 import static org.codeandmagic.findmefood.provider.PlacesDatabase.Places;
@@ -45,17 +53,30 @@ public class PlacesListFragment extends ListFragment implements LoaderCallbacks<
 
     private Bitmap iconFood;
     private Bitmap iconDrink;
+    private EndlessScrollListener endlessScrollListener;
+
+    public static PlacesListFragment newInstance(Bundle args) {
+        PlacesListFragment fragment = new PlacesListFragment();
+        fragment.setArguments(args);
+        return fragment;
+    }
+
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        endlessScrollListener = new EndlessScrollListener();
+    }
 
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
         decodePlaceTypeIcons();
-
         getLoaderManager().initLoader(LOAD_PLACES, null, this);
+        getListView().setOnScrollListener(endlessScrollListener);
     }
 
-    private ActionBarActivity getActionBarActivity() {
-        return (ActionBarActivity) getActivity();
+    private PlacesActivity getPlacesActivity() {
+        return (PlacesActivity) getActivity();
     }
 
     private void decodePlaceTypeIcons() {
@@ -63,13 +84,8 @@ public class PlacesListFragment extends ListFragment implements LoaderCallbacks<
         iconDrink = BitmapFactory.decodeResource(getResources(), R.drawable.ic_action_coffee);
     }
 
-    private void showLoadingProgressBar(boolean visible) {
-        getActionBarActivity().setSupportProgressBarVisibility(visible);
-    }
-
     @Override
     public Loader<Cursor> onCreateLoader(int id, Bundle args) {
-        showLoadingProgressBar(true);
         return new CursorLoader(getActivity(), Places.CONTENT_URI, Places.PROJECTION, null, null, null);
     }
 
@@ -80,7 +96,6 @@ public class PlacesListFragment extends ListFragment implements LoaderCallbacks<
                 setListAdapter(new PlacesCursorAdapter(this));
             }
             ((CursorAdapter) getListAdapter()).swapCursor(cursor);
-            showLoadingProgressBar(false);
         }
     }
 
@@ -96,11 +111,20 @@ public class PlacesListFragment extends ListFragment implements LoaderCallbacks<
         Place currentPlace = PlacesDatabase.readPlace((Cursor) getListAdapter().getItem(position));
         PlacesMapFragment mapFragment = (PlacesMapFragment) getFragmentManager().findFragmentById(R.id.map_fragment);
         if (mapFragment == null) {
-            mapFragment = PlacesMapFragment.newInstance(currentPlace);
+            Bundle args = new Bundle();
+            args.putParcelable(EXTRA_PLACE, currentPlace);
+            mapFragment = PlacesMapFragment.newInstance(args);
             getFragmentManager().beginTransaction().replace(R.id.places_list_fragment, mapFragment).addToBackStack(null).commit();
         } else {
             mapFragment.refreshCurrentPlace(currentPlace);
         }
+    }
+
+    private void startPlacesUpdateService(Location location) {
+        Intent serviceIntent = new Intent(getActivity(), PlacesUpdateService.class);
+        serviceIntent.putExtra(EXTRA_LATITUDE, location.getLatitude());
+        serviceIntent.putExtra(EXTRA_LONGITUDE, location.getLongitude());
+        getActivity().startService(serviceIntent);
     }
 
     private static class PlacesCursorAdapter extends CursorAdapter {
@@ -127,7 +151,7 @@ public class PlacesListFragment extends ListFragment implements LoaderCallbacks<
             holder.getDistanceView().setText("1 mile");
             holder.getSubtitleView().setText(formatExtraInfo(place));
             holder.getPriceView().setText(place.formatPriceLevel(CURRENCY));
-            holder.getRootView().setOpenNow(place.getOpeningHours().isOpenNow());
+            holder.getOpenNowView().setVisibility(place.getOpeningHours().isOpenNow() ? View.VISIBLE : View.GONE);
         }
 
         private SpannableStringBuilder formatExtraInfo(Place place) {
@@ -156,22 +180,22 @@ public class PlacesListFragment extends ListFragment implements LoaderCallbacks<
     }
 
     private static class PlaceViewHolder {
-        private final PlaceListItemView rootView;
+        private final View openNowView;
         private final TextView titleView;
         private final TextView subtitleView;
         private final TextView distanceView;
         private final TextView priceView;
 
         public PlaceViewHolder(View view) {
-            rootView = (PlaceListItemView) view;
+            openNowView = view.findViewById(R.id.open_now);
             titleView = (TextView) view.findViewById(R.id.title);
             subtitleView = (TextView) view.findViewById(R.id.subtitle);
             distanceView = (TextView) view.findViewById(R.id.distance);
             priceView = (TextView) view.findViewById(R.id.price);
         }
 
-        private PlaceListItemView getRootView() {
-            return rootView;
+        private View getOpenNowView() {
+            return openNowView;
         }
 
         private TextView getTitleView() {
@@ -188,6 +212,37 @@ public class PlacesListFragment extends ListFragment implements LoaderCallbacks<
 
         private TextView getPriceView() {
             return priceView;
+        }
+    }
+
+    private class EndlessScrollListener implements OnScrollListener {
+
+        private static final int VISIBLE_THRESHOLD = 1;
+        private int previousTotal;
+        private boolean loading;
+
+        @Override
+        public void onScrollStateChanged(AbsListView view, int scrollState) {
+            // nothing to do
+        }
+
+        @Override
+        public void onScroll(AbsListView view, int firstVisibleItem, int visibleItemCount, int totalItemCount) {
+            //Log.v(APP_TAG, MessageFormat.format("firstVisibleItem={0}, visibleItemCount={1}, totalItemCount={2}, previousTotal={3}",
+            //        firstVisibleItem, visibleItemCount, totalItemCount, previousTotal));
+
+            if (loading) {
+                if (totalItemCount > previousTotal) {
+                    loading = false;
+                    previousTotal = totalItemCount;
+                }
+            }
+            if (!loading && (totalItemCount - visibleItemCount) <= (firstVisibleItem + VISIBLE_THRESHOLD)) {
+                if (getPlacesActivity().hasNextPage()) {
+                    getPlacesActivity().requestNextPage();
+                    loading = true;
+                }
+            }
         }
     }
 }
