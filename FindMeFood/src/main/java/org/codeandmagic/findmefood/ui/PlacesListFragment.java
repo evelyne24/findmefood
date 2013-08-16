@@ -202,8 +202,9 @@ public class PlacesListFragment extends ListFragment implements LoaderCallbacks<
     }
 
     private class EndlessScrollListener implements OnScrollListener {
-
-        private static final int VISIBLE_THRESHOLD = 1;
+        // How many items are visible before getting to the bottom
+        // so a preemptive load can triggered before that.
+        private static final int VISIBLE_THRESHOLD = 5;
         private int previousTotal;
         private boolean loading;
 
