@@ -67,4 +67,12 @@ public class PlaceGeometry implements Parcelable {
             return new PlaceGeometry[size];
         }
     };
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("PlaceGeometry{");
+        sb.append("location=").append(location);
+        sb.append('}');
+        return sb.toString();
+    }
 }

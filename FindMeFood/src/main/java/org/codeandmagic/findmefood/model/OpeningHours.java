@@ -9,6 +9,16 @@ import com.google.gson.annotations.SerializedName;
  */
 public class OpeningHours implements Parcelable {
 
+    public static final Parcelable.Creator<OpeningHours> CREATOR
+            = new Parcelable.Creator<OpeningHours>() {
+        public OpeningHours createFromParcel(Parcel in) {
+            return new OpeningHours(in);
+        }
+
+        public OpeningHours[] newArray(int size) {
+            return new OpeningHours[size];
+        }
+    };
     @SerializedName("open_now")
     private boolean openNow;
 
@@ -59,14 +69,11 @@ public class OpeningHours implements Parcelable {
         dest.writeInt(openNow ? 1 : 0);
     }
 
-    public static final Parcelable.Creator<OpeningHours> CREATOR
-            = new Parcelable.Creator<OpeningHours>() {
-        public OpeningHours createFromParcel(Parcel in) {
-            return new OpeningHours(in);
-        }
-
-        public OpeningHours[] newArray(int size) {
-            return new OpeningHours[size];
-        }
-    };
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("OpeningHours{");
+        sb.append("openNow=").append(openNow);
+        sb.append('}');
+        return sb.toString();
+    }
 }

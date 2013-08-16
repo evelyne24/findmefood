@@ -223,4 +223,20 @@ public class Place implements Parcelable {
             return new Place[size];
         }
     };
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("Place{");
+        sb.append("id='").append(id).append('\'');
+        sb.append(", name='").append(name).append('\'');
+        sb.append(", iconUrl='").append(iconUrl).append('\'');
+        sb.append(", vicinity='").append(vicinity).append('\'');
+        sb.append(", types=").append(types);
+        sb.append(", rating=").append(rating);
+        sb.append(", priceLevel=").append(priceLevel);
+        sb.append(", geometry=").append(geometry);
+        sb.append(", openingHours=").append(openingHours);
+        sb.append('}');
+        return sb.toString();
+    }
 }

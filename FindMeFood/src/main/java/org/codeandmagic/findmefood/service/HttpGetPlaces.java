@@ -20,15 +20,16 @@ public class HttpGetPlaces extends HttpRequest {
     private static final String PARAM_RADIUS = "radius";
     private static final String PARAM_SENSOR = "sensor";
     private static final String PARAM_TYPES = "types";
-    private static final String PARAM_NEXT_PAGE_TOKEN = "pagetoken";
+    private static final String PARAM_PAGE_TOKEN = "pagetoken";
     private static final String LOCATION_FORMAT = "{0},{1}";
 
     public HttpGetPlaces() {
         // Specify the required params for this request
-        addParamName(PARAM_LOCATION, true)
-        .addParamName(PARAM_RADIUS, true)
+        addParamName(PARAM_LOCATION, false)
+        .addParamName(PARAM_RADIUS, false)
         .addParamName(PARAM_TYPES, false)
-        .addParamName(PARAM_SENSOR, false);
+        .addParamName(PARAM_SENSOR, false)
+        .addParamName(PARAM_PAGE_TOKEN, false);
 
         // Specify the default param values for this request
         addParam(PARAM_SENSOR, String.valueOf(true));
@@ -39,6 +40,15 @@ public class HttpGetPlaces extends HttpRequest {
     @Override
     public String getBaseUrl() {
         return BASE_URL;
+    }
+
+    @Override
+    protected MalformedRequestException validateParams()  {
+        MalformedRequestException superEx = super.validateParams();
+        if(!paramNames.containsKey(PARAM_PAGE_TOKEN) && superEx != null) {
+            return new MalformedRequestException(superEx.getMessage(), "Missing required param '" + PARAM_PAGE_TOKEN  + "'");
+        }
+        return null;
     }
 
     public HttpGetPlaces setLocation(double latitude, double longitude) {
@@ -69,7 +79,7 @@ public class HttpGetPlaces extends HttpRequest {
 
     public HttpGetPlaces setNextPageToken(String nextPageToken) {
         if(!TextUtils.isEmpty(nextPageToken)) {
-            addParam(PARAM_NEXT_PAGE_TOKEN, nextPageToken);
+            addParam(PARAM_PAGE_TOKEN, nextPageToken);
         }
         return this;
     }

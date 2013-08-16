@@ -62,6 +62,7 @@ public final class PlacesDatabase {
         try {
             context.getContentResolver().applyBatch(PlacesDatabase.AUTHORITY, ops);
             Log.v(APP_TAG, MessageFormat.format("Inserted {0} Places into database.", places.size()));
+            Log.v(APP_TAG, "\n\n" + places.toString() + "\n\n");
         } catch (Exception e) {
             Log.e(APP_TAG, "Failed to insert Places into database.", e);
         }
@@ -95,6 +96,7 @@ public final class PlacesDatabase {
 
     public interface Places extends BaseColumns {
         String TABLE = "places";
+
         String ID = "id";
         String NAME = "name";
         String ICON_URL = "icon_url";

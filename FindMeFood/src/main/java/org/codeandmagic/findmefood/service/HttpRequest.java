@@ -23,10 +23,10 @@ public abstract class HttpRequest {
     protected static final String PARAM_API_KEY = "key";
 
     protected String url;
-    private Map<String, Boolean> paramNames;
-    private Map<String, String> paramValues;
-    private Map<String, String> defaultValues;
-    private List<NameValuePair> params;
+    protected Map<String, Boolean> paramNames;
+    protected Map<String, String> paramValues;
+    protected Map<String, String> defaultValues;
+    protected List<NameValuePair> params;
 
     public HttpRequest() {
         paramNames = new HashMap<String, Boolean>();
@@ -54,28 +54,45 @@ public abstract class HttpRequest {
     /**
      * @return The base URL for this request, without query params.
      */
-    public abstract String getBaseUrl();
+    protected abstract String getBaseUrl();
 
-    public String buildUrl() throws MalformedRequestException {
+    private MalformedRequestException validate() {
         if (TextUtils.isEmpty(getBaseUrl())) {
-            throw new MalformedRequestException("The base url cannot be empty/null.");
+            return new MalformedRequestException("The base url cannot be empty/null.");
         }
+       return validateParams();
+    }
 
+    protected MalformedRequestException validateParams() {
         for (String paramName : paramNames.keySet()) {
             Boolean isRequired = paramNames.get(paramName);
             String paramValue = paramValues.get(paramName);
             String defaultValue = defaultValues.get(paramName);
 
             if ((isRequired != null && isRequired) && paramValue == null && defaultValue == null) {
-                throw new MalformedRequestException(MessageFormat.format("Missing required parameter '{0}'.", paramName));
+                return new MalformedRequestException(MessageFormat.format("Missing required parameter {0}.", paramName));
             }
+        }
+        return null;
+    }
+
+    public String buildUrl() throws MalformedRequestException {
+
+        MalformedRequestException exception = validate();
+        if(exception != null) {
+            throw exception;
+        }
+
+        for (String paramName : paramNames.keySet()) {
+            String paramValue = paramValues.get(paramName);
+            String defaultValue = defaultValues.get(paramName);
 
             if (paramValue != null) {
                 params.add(new BasicNameValuePair(paramName, paramValue));
             } else if (defaultValue != null) {
                 params.add(new BasicNameValuePair(paramName, defaultValue));
             } else {
-                Log.w(APP_TAG, MessageFormat.format("Ignoring parameter '{0}'.", paramName));
+                Log.w(APP_TAG, MessageFormat.format("Ignoring parameter {0}.", paramName));
             }
         }
 

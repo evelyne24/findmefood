@@ -94,4 +94,13 @@ public class PlaceLocation implements Parcelable {
             return new PlaceLocation[size];
         }
     };
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("PlaceLocation{");
+        sb.append("latitude=").append(latitude);
+        sb.append(", longitude=").append(longitude);
+        sb.append('}');
+        return sb.toString();
+    }
 }

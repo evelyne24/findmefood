@@ -120,15 +120,7 @@ public class PlacesListFragment extends ListFragment implements LoaderCallbacks<
         }
     }
 
-    private void startPlacesUpdateService(Location location) {
-        Intent serviceIntent = new Intent(getActivity(), PlacesUpdateService.class);
-        serviceIntent.putExtra(EXTRA_LATITUDE, location.getLatitude());
-        serviceIntent.putExtra(EXTRA_LONGITUDE, location.getLongitude());
-        getActivity().startService(serviceIntent);
-    }
-
     private static class PlacesCursorAdapter extends CursorAdapter {
-
         private PlacesListFragment context;
 
         public PlacesCursorAdapter(PlacesListFragment context) {

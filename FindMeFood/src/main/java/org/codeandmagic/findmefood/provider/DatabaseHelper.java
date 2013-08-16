@@ -18,11 +18,8 @@ import static org.codeandmagic.findmefood.Consts.APP_TAG;
  */
 public class DatabaseHelper extends SQLiteOpenHelper {
 
-    private Context context;
-
     public DatabaseHelper(Context context) {
         super(context, PlacesDatabase.NAME, null, PlacesDatabase.VERSION);
-        this.context = context;
     }
 
     @Override
@@ -37,8 +34,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             onCreate(db);
         }
     }
-
-
 
     private static String createPlacesTable() {
         return "CREATE TABLE " + Places.TABLE + " ( " +

@@ -54,17 +54,18 @@ public class PlacesUpdateService extends IntentService {
 
         boolean hasNextPage = !TextUtils.isEmpty(nextPageToken);
         boolean hasLocationChangedEnough = hasLocationChangedEnough(latitude, longitude, radius, placeTypes);
-        Log.v(APP_TAG, "Has next page of results? " + hasNextPage);
+        Log.v(APP_TAG, "Has next page token? " + hasNextPage + " -> " + nextPageToken);
         Log.v(APP_TAG, "Has Location changed enough? " + hasLocationChangedEnough);
 
-        if(hasNextPage || hasLocationChangedEnough) {
-            Log.d(APP_TAG, "Executing a Places update request...");
+        HttpRequest request = null;
+        if (hasNextPage) {
+            request = new HttpGetPlaces().setNextPageToken(nextPageToken);
+        } else if (hasLocationChangedEnough) {
+            request = new HttpGetPlaces().setLocation(latitude, longitude).setRadius(radius).setTypes(placeTypes);
+        }
 
-            HttpGetPlaces request = new HttpGetPlaces()
-                    .setNextPageToken(nextPageToken)
-                    .setLocation(latitude, longitude)
-                    .setRadius(radius)
-                    .setTypes(placeTypes);
+        if (request != null) {
+            Log.d(APP_TAG, "Executing a Places update request...");
 
             HttpResponse response = httpClient.executeRequest(request);
             if (HttpStatus.SC_OK != response.getStatusCode()) {
@@ -73,20 +74,19 @@ public class PlacesUpdateService extends IntentService {
                 PlaceParseResponse parseResponse = responseParser.parsePlaces(response.getResponse());
                 Log.i(APP_TAG, MessageFormat.format("GET {0}:\nGot {1} places.", request.getUrl(), parseResponse.places.size()));
 
-                if(parseResponse.places.size() > 0) {
+                if (parseResponse.places.size() > 0) {
                     PlacesDatabase.insertPlaces(this, parseResponse.places);
                 }
 
                 boolean hasNextToken = !TextUtils.isEmpty(parseResponse.nextPageToken);
-                if(hasNextToken) {
+                if (hasNextToken) {
                     saveNextPageToken(parseResponse.nextPageToken);
                 }
                 broadcastResponseSuccess(hasNextToken);
             }
 
             saveLastUpdateRequestExtras(latitude, longitude, radius, placeTypes);
-        }
-        else {
+        } else {
             Log.d(APP_TAG, "There's no more data to load or a similar request has already been processed.");
         }
     }
@@ -111,10 +111,10 @@ public class PlacesUpdateService extends IntentService {
     private void saveLastUpdateRequestExtras(double latitude, double longitude, double radius, String types) {
         SharedPreferences.Editor editor = sharedPreferences.edit();
         editor.putInt(LATITUDE, Utils.coordinateToInt(latitude))
-              .putInt(LONGITUDE, Utils.coordinateToInt(longitude))
-              .putFloat(RADIUS, (float) radius)
-              .putString(PLACE_TYPES, !TextUtils.isEmpty(types) ? types : Place.DEFAULT_TYPES)
-              .commit();
+                .putInt(LONGITUDE, Utils.coordinateToInt(longitude))
+                .putFloat(RADIUS, (float) radius)
+                .putString(PLACE_TYPES, !TextUtils.isEmpty(types) ? types : Place.DEFAULT_TYPES)
+                .commit();
     }
 
     private void broadcastResponseFailure(HttpResponse response) {
