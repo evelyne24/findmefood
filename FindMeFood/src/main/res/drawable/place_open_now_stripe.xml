@@ -2,18 +2,15 @@
 
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <item>
-        <shape android:shape="rectangle">
+    <item >
+        <shape android:shape="rectangle"  xmlns:android="http://schemas.android.com/apk/res/android">
             <solid android:color="@color/place_open_now_stripe"/>
+            <padding android:left="@dimen/place_open_now_stripe_width" />
         </shape>
     </item>
 
-    <item>
-        <inset
-                android:drawable="@drawable/place_open_now_mask"
-                android:insetLeft="@dimen/place_open_now_stripe_width"
-                android:visible="true"/>
-    </item>
+    <item android:drawable="@drawable/place_open_now_mask"
+          android:left="@dimen/place_open_now_stripe_width" />
 
 </layer-list>
 

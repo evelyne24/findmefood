@@ -62,7 +62,7 @@ public final class PlacesDatabase {
         try {
             context.getContentResolver().applyBatch(PlacesDatabase.AUTHORITY, ops);
             Log.v(APP_TAG, MessageFormat.format("Inserted {0} Places into database.", places.size()));
-            Log.v(APP_TAG, "\n\n" + places.toString() + "\n\n");
+            //Log.v(APP_TAG, "\n\n" + places.toString() + "\n\n");
         } catch (Exception e) {
             Log.e(APP_TAG, "Failed to insert Places into database.", e);
         }
@@ -76,7 +76,7 @@ public final class PlacesDatabase {
         place.setIconUrl(cursor.getString(cursor.getColumnIndex(Places.ICON_URL)));
         place.setPriceLevel(cursor.getInt(cursor.getColumnIndex(Places.PRICE_LEVEL)));
         place.setRating(cursor.getDouble(cursor.getColumnIndex(Places.RATING)));
-        place.setOpeningHours(new OpeningHours(cursor.getInt(cursor.getColumnIndex(Places.OPEN_NOW)) > 0));
+        place.setOpeningHours(new OpeningHours(cursor.getInt(cursor.getColumnIndex(Places.OPEN_NOW)) == 1));
         place.setGeometry(new PlaceGeometry(new PlaceLocation(cursor.getDouble(cursor.getColumnIndex(Places.LATITUDE)),
                 cursor.getDouble(cursor.getColumnIndex(Places.LONGITUDE)))));
         place.setTypes(cursor.getString(cursor.getColumnIndex(Places.TYPES)));

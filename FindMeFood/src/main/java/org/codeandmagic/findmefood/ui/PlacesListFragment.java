@@ -1,11 +1,9 @@
 package org.codeandmagic.findmefood.ui;
 
 import android.content.Context;
-import android.content.Intent;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.location.Location;
 import android.os.Bundle;
 import android.support.v4.app.ListFragment;
 import android.support.v4.app.LoaderManager.LoaderCallbacks;
@@ -16,7 +14,6 @@ import android.text.Spannable;
 import android.text.SpannableStringBuilder;
 import android.text.TextUtils;
 import android.text.style.ImageSpan;
-import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AbsListView;
@@ -26,14 +23,11 @@ import android.widget.TextView;
 import org.codeandmagic.findmefood.R;
 import org.codeandmagic.findmefood.model.Place;
 import org.codeandmagic.findmefood.provider.PlacesDatabase;
-import org.codeandmagic.findmefood.service.PlacesUpdateService;
 
-import java.text.MessageFormat;
 import java.util.Currency;
 import java.util.List;
 import java.util.Locale;
 
-import static org.codeandmagic.findmefood.Consts.APP_TAG;
 import static org.codeandmagic.findmefood.Consts.Intents.*;
 import static org.codeandmagic.findmefood.Consts.Loaders.LOAD_PLACES;
 import static org.codeandmagic.findmefood.Consts.SPACE;
@@ -143,7 +137,7 @@ public class PlacesListFragment extends ListFragment implements LoaderCallbacks<
             holder.getDistanceView().setText("1 mile");
             holder.getSubtitleView().setText(formatExtraInfo(place));
             holder.getPriceView().setText(place.formatPriceLevel(CURRENCY));
-            holder.getOpenNowView().setVisibility(place.getOpeningHours().isOpenNow() ? View.VISIBLE : View.GONE);
+            holder.getOpenNowView().setOpenNow(place.getOpeningHours().isOpenNow());
         }
 
         private SpannableStringBuilder formatExtraInfo(Place place) {
@@ -172,22 +166,22 @@ public class PlacesListFragment extends ListFragment implements LoaderCallbacks<
     }
 
     private static class PlaceViewHolder {
-        private final View openNowView;
+        private final PlaceListItemView view;
         private final TextView titleView;
         private final TextView subtitleView;
         private final TextView distanceView;
         private final TextView priceView;
 
         public PlaceViewHolder(View view) {
-            openNowView = view.findViewById(R.id.open_now);
+            this.view = (PlaceListItemView) view;
             titleView = (TextView) view.findViewById(R.id.title);
             subtitleView = (TextView) view.findViewById(R.id.subtitle);
             distanceView = (TextView) view.findViewById(R.id.distance);
             priceView = (TextView) view.findViewById(R.id.price);
         }
 
-        private View getOpenNowView() {
-            return openNowView;
+        private PlaceListItemView getOpenNowView() {
+            return view;
         }
 
         private TextView getTitleView() {

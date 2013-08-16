@@ -1,24 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 
-<RelativeLayout
+<org.codeandmagic.findmefood.ui.PlaceListItemView
         xmlns:android="http://schemas.android.com/apk/res/android"
         android:orientation="vertical"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:padding="@dimen/spacing_normal">
-
-
-    <View android:id="@+id/open_now"
-          android:layout_width="@dimen/place_open_now_stripe_width"
-          android:layout_height="match_parent"
-          android:background="@color/place_open_now_stripe" />
+        android:minHeight="@dimen/place_list_item_min_height">
 
     <TextView
             android:id="@+id/title"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_alignParentLeft="true"
+            android:layout_toRightOf="@+id/open_now"
             android:layout_toLeftOf="@+id/distance"
+            android:layout_alignParentLeft="true"
+            android:layout_marginLeft="@dimen/spacing_normal"
+            android:layout_marginTop="@dimen/spacing_normal"
             style="@style/Place.Title"/>
 
 
@@ -27,8 +24,10 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_below="@+id/title"
-            android:layout_alignParentLeft="true"
+            android:layout_toRightOf="@+id/open_now"
             android:layout_toLeftOf="@+id/distance"
+            android:layout_alignParentLeft="true"
+            android:layout_marginLeft="@dimen/spacing_normal"
             android:layout_marginTop="@dimen/spacing_small"
             style="@style/Place.Subtitle"/>
 
@@ -38,15 +37,20 @@
             android:layout_height="wrap_content"
             android:layout_alignParentRight="true"
             android:layout_marginLeft="@dimen/spacing_small"
+            android:layout_marginRight="@dimen/spacing_normal"
+            android:layout_marginTop="@dimen/spacing_normal"
             style="@style/Place.Distance"/>
 
-    <TextView android:id="@+id/price"
-              android:layout_width="wrap_content"
-              android:layout_height="wrap_content"
-              android:layout_below="@+id/distance"
-              android:layout_alignLeft="@+id/distance"
-              android:layout_alignParentRight="true"
-              android:layout_marginTop="@dimen/spacing_small"
-              style="@style/Place.Price" />
+    <TextView
+            android:id="@+id/price"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/distance"
+            android:layout_alignLeft="@+id/distance"
+            android:layout_alignParentRight="true"
+            android:layout_marginTop="@dimen/spacing_small"
+            android:layout_marginRight="@dimen/spacing_normal"
+            style="@style/Place.Price"/>
 
-</RelativeLayout>
+
+</org.codeandmagic.findmefood.ui.PlaceListItemView>

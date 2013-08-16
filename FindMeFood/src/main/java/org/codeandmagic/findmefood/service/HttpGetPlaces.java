@@ -13,8 +13,6 @@ import static org.codeandmagic.findmefood.Consts.UserSettings.DEFAULT_RADIUS;
  */
 public class HttpGetPlaces extends HttpRequest {
 
-
-
     private static final String BASE_URL = "https://maps.googleapis.com/maps/api/place/nearbysearch/json?";
     private static final String PARAM_LOCATION = "location";
     private static final String PARAM_RADIUS = "radius";

@@ -27,7 +27,7 @@ public class OpeningHours implements Parcelable {
     }
 
     public OpeningHours(Parcel in) {
-        openNow = in.readInt() > 0;
+        openNow = in.readInt() == 1;
     }
 
     public OpeningHours(boolean openNow) {
