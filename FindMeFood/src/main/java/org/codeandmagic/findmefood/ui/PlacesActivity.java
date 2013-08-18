@@ -24,7 +24,7 @@ import com.google.android.gms.location.LocationClient;
 import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
 import org.codeandmagic.findmefood.R;
-import org.codeandmagic.findmefood.Utils;
+
 import org.codeandmagic.findmefood.service.PlacesUpdateService;
 
 import static org.codeandmagic.findmefood.Consts.APP_TAG;
@@ -32,6 +32,8 @@ import static org.codeandmagic.findmefood.Consts.Intents.*;
 import static org.codeandmagic.findmefood.Consts.SavedInstanceState.*;
 import static org.codeandmagic.findmefood.Consts.UserSettings.HIGH_PRIORITY_FAST_INTERVAL;
 import static org.codeandmagic.findmefood.Consts.UserSettings.HIGH_PRIORITY_UPDATE_INTERVAL;
+
+import static org.codeandmagic.findmefood.LocationUtils.*;
 
 public class PlacesActivity extends ActionBarActivity implements LocationListener,
         ConnectionCallbacks, OnConnectionFailedListener {
@@ -41,13 +43,11 @@ public class PlacesActivity extends ActionBarActivity implements LocationListene
      * This code is returned in Activity.onActivityResult
     */
     public final static int CONNECTION_FAILURE_RESOLUTION_REQUEST = 9000;
-
     private Location myLocation;
     private LocationClient locationClient;
     private LocationRequest singleUpdateRequest;
     private PlacesReceiver placesReceiver;
     private IntentFilter placesFilter;
-
     private boolean locationUpdateRequestInProgress = true;
     private boolean placesUpdateRequestInProgress = false;
     private boolean hasNextPage;
@@ -117,10 +117,11 @@ public class PlacesActivity extends ActionBarActivity implements LocationListene
 
     private void attachFragments() {
         FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
-        ft.replace(R.id.places_list_fragment, PlacesListFragment.newInstance(Bundle.EMPTY));
+        //ft.replace(R.id.places_list_fragment, PlacesListFragment.newInstance(Bundle.EMPTY));
 
         if (isDualPane()) {
-            ft.replace(R.id.map_fragment, PlacesMapFragment.newInstance(Bundle.EMPTY));
+            //ft.replace(R.id.map_fragment, PlacesMapFragment.newInstance(Bundle.EMPTY));
+            ft.replace(R.id.map_fragment, PlacesMapFragmentWithCache.newInstance(Bundle.EMPTY));
         }
 
         ft.commit();
@@ -223,7 +224,7 @@ public class PlacesActivity extends ActionBarActivity implements LocationListene
                 Log.v(APP_TAG, "The current Location is unknown.");
                 // We try to get hold of an existing location that's good enough to get Places
                 Location lastLocation = locationClient.getLastLocation();
-                if (Utils.isLocationFresh(lastLocation)) {
+                if (isLocationFresh(lastLocation)) {
                     // The last known Location is good enough
                     Log.v(APP_TAG, "The last known Location is fresh enough to use.");
 

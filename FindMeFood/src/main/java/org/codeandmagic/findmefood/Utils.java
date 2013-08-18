@@ -5,6 +5,10 @@ import android.location.Location;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 
+import java.util.ArrayList;
+
+import static java.lang.Math.max;
+import static java.lang.Math.min;
 import static org.codeandmagic.findmefood.Consts.UserSettings.DEFAULT_RADIUS;
 import static org.codeandmagic.findmefood.Consts.UserSettings.FRESH_LOCATION_INTERVAL;
 import static org.codeandmagic.findmefood.Consts.IE6;
@@ -26,28 +30,42 @@ public final class Utils {
         return activeNetwork != null && ConnectivityManager.TYPE_WIFI == activeNetwork.getType();
     }
 
-    public static float getDistanceBetween(Location startLocation, Location endLocation) {
-        return getDistanceBetween(startLocation.getLatitude(), startLocation.getLongitude(),
-                endLocation.getLatitude(), endLocation.getLongitude());
+    /**
+     * Find all elements in first array that are not found in the second one.
+     * @param firstArray
+     * @param secondArray
+     * @param <T>
+     * @return
+     */
+    public static <T> T[] diff(T[] firstArray, T[] secondArray) {
+        ArrayList<T> diff = new ArrayList<T>();
+        for(T e1 : firstArray) {
+            for (T e2 : secondArray) {
+                if(!e1.equals(e2)) {
+                    diff.add(e1);
+                }
+            }
+        }
+        return (T[]) diff.toArray();
     }
 
-    public static float getDistanceBetween(double startLatitude, double startLongitude, double endLatitude, double endLongitude) {
-        float[] results = new float[1];
-        Location.distanceBetween(startLatitude, startLongitude, endLatitude, endLongitude, results);
-        return results[0];
+    /**
+     * Find all elements that are found in both arrays.
+     * @param firstArray
+     * @param secondArray
+     * @param <T>
+     * @return
+     */
+    public static <T> T[] intersect(T[] firstArray, T[] secondArray) {
+        ArrayList<T> intersect = new ArrayList<T>();
+        for(T e1 : firstArray) {
+            for (T e2 : secondArray) {
+                if(e1.equals(e2)) {
+                    intersect.add(e1);
+                }
+            }
+        }
+        return (T[]) intersect.toArray();
     }
 
-    public static boolean isLocationFresh(Location location) {
-        return location != null &&
-                System.currentTimeMillis() - location.getTime() < FRESH_LOCATION_INTERVAL &&
-                location.getAccuracy() <= DEFAULT_RADIUS;
-    }
-
-    public static int coordinateToInt(double coordinate) {
-        return (int) (coordinate * IE6);
-    }
-
-    public static double coordinateFromInt(int intCoordinate) {
-        return intCoordinate / IE6;
-    }
 }

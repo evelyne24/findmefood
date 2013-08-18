@@ -7,7 +7,7 @@ import android.support.v4.content.LocalBroadcastManager;
 import android.text.TextUtils;
 import android.util.Log;
 import org.apache.http.HttpStatus;
-import org.codeandmagic.findmefood.Utils;
+
 import org.codeandmagic.findmefood.model.Place;
 import org.codeandmagic.findmefood.provider.PlacesDatabase;
 import org.codeandmagic.findmefood.service.HttpResponseParser.PlaceParseResponse;
@@ -19,6 +19,8 @@ import static org.codeandmagic.findmefood.Consts.Http.STATUS_CODE_EXCEPTION;
 import static org.codeandmagic.findmefood.Consts.Intents.*;
 import static org.codeandmagic.findmefood.Consts.SavedSharedPreferences.*;
 import static org.codeandmagic.findmefood.Consts.UserSettings.DEFAULT_RADIUS;
+import static org.codeandmagic.findmefood.LocationUtils.*;
+import static org.codeandmagic.findmefood.Utils.*;
 
 /**
  * Created by evelyne24.
@@ -92,12 +94,12 @@ public class PlacesUpdateService extends IntentService {
     }
 
     private boolean hasLocationChangedEnough(double latitude, double longitude, double radius, String types) {
-        double savedLatitude = Utils.coordinateFromInt(sharedPreferences.getInt(LATITUDE, 0));
-        double savedLongitude = Utils.coordinateFromInt(sharedPreferences.getInt(LONGITUDE, 0));
+        double savedLatitude = coordinateFromInt(sharedPreferences.getInt(LATITUDE, 0));
+        double savedLongitude = coordinateFromInt(sharedPreferences.getInt(LONGITUDE, 0));
         double savedRadius = sharedPreferences.getFloat(RADIUS, 0);
         String savedTypes = sharedPreferences.getString(PLACE_TYPES, Place.DEFAULT_TYPES);
 
-        boolean outsideRadius = Utils.getDistanceBetween(savedLatitude, savedLongitude, latitude, longitude) > DEFAULT_RADIUS;
+        boolean outsideRadius = getDistanceBetween(savedLatitude, savedLongitude, latitude, longitude) > DEFAULT_RADIUS;
         boolean hasChangedRadius = (savedRadius - radius) > 1;
         boolean hasChangedTypes = !savedTypes.equals(types);
 
@@ -110,8 +112,8 @@ public class PlacesUpdateService extends IntentService {
 
     private void saveLastUpdateRequestExtras(double latitude, double longitude, double radius, String types) {
         SharedPreferences.Editor editor = sharedPreferences.edit();
-        editor.putInt(LATITUDE, Utils.coordinateToInt(latitude))
-                .putInt(LONGITUDE, Utils.coordinateToInt(longitude))
+        editor.putInt(LATITUDE, coordinateToInt(latitude))
+                .putInt(LONGITUDE, coordinateToInt(longitude))
                 .putFloat(RADIUS, (float) radius)
                 .putString(PLACE_TYPES, !TextUtils.isEmpty(types) ? types : Place.DEFAULT_TYPES)
                 .commit();
@@ -121,7 +123,7 @@ public class PlacesUpdateService extends IntentService {
         Intent responseIntent;
 
         if (STATUS_CODE_EXCEPTION == response.getStatusCode()) {
-            if (!Utils.isConnected(this)) {
+            if (!isConnected(this)) {
                 responseIntent = new Intent(ACTION_REQUEST_FAILED_NO_CONNECTION);
             } else {
                 responseIntent = new Intent(ACTION_REQUEST_FAILED_UNKNOWN);

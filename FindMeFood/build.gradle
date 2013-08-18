@@ -10,6 +10,7 @@ dependencies {
     compile 'com.android.support:support-v4:18.0.+'
     compile 'com.android.support:appcompat-v7:18.0.+'
     compile 'com.google.code.gson:gson:1.7.2'
+    compile project(':Volley')
 }
 
 android {

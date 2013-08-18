@@ -26,7 +26,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static com.google.android.gms.maps.GoogleMap.OnCameraChangeListener;
 import static org.codeandmagic.findmefood.Consts.APP_TAG;
 import static org.codeandmagic.findmefood.Consts.Intents.EXTRA_PLACE;
 import static org.codeandmagic.findmefood.Consts.Loaders.LOAD_PLACES;
@@ -35,7 +34,7 @@ import static org.codeandmagic.findmefood.provider.PlacesDatabase.Places;
 /**
  * Created by evelyne24.
  */
-public class PlacesMapFragment extends Fragment implements OnCameraChangeListener, LoaderCallbacks<Cursor> {
+public class PlacesMapFragment extends Fragment implements LoaderCallbacks<Cursor> {
 
     private static final int MAP_ZOOM = 13;
     private GoogleMap googleMap;
@@ -68,6 +67,7 @@ public class PlacesMapFragment extends Fragment implements OnCameraChangeListene
             MapsInitializer.initialize(getActivity());
             iconPin = BitmapDescriptorFactory.fromResource(R.drawable.ic_marker_blue);
             iconCurrentPin = BitmapDescriptorFactory.fromResource(R.drawable.ic_marker_red);
+
         } catch (GooglePlayServicesNotAvailableException e) {
             Log.w(APP_TAG, "GooglePlayServices not available.");
         }
@@ -106,10 +106,9 @@ public class PlacesMapFragment extends Fragment implements OnCameraChangeListene
         }
 
         googleMap.getUiSettings().setZoomControlsEnabled(true);
-        googleMap.setOnCameraChangeListener(this);
         googleMap.setMyLocationEnabled(true);
 
-        // initLoader gets triggered before the GoogleMap is ready after a rotation!
+        // initLoader() gets triggered before the GoogleMap is ready after a rotation!
         getLoaderManager().restartLoader(LOAD_PLACES, null, this);
     }
 
@@ -118,32 +117,7 @@ public class PlacesMapFragment extends Fragment implements OnCameraChangeListene
         googleMap.animateCamera(CameraUpdateFactory.zoomTo(MAP_ZOOM));
     }
 
-    @Override
-    public void onCameraChange(CameraPosition cameraPosition) {
 
-    }
-
-    private double computeVisibleRadius(LatLngBounds latLngBounds) {
-        double startLat, startLng, endLat, endLng;
-
-        if (latLngBounds.northeast.latitude < latLngBounds.southwest.latitude) {
-            startLat = latLngBounds.northeast.latitude;
-            endLat = latLngBounds.southwest.latitude;
-        } else {
-            endLat = latLngBounds.northeast.latitude;
-            startLat = latLngBounds.southwest.latitude;
-        }
-
-        if (latLngBounds.northeast.longitude < latLngBounds.southwest.longitude) {
-            startLng = latLngBounds.northeast.longitude;
-            endLng = latLngBounds.southwest.longitude;
-        } else {
-            endLng = latLngBounds.northeast.longitude;
-            startLng = latLngBounds.southwest.longitude;
-        }
-
-        return Math.sqrt(Math.pow((endLat - startLat) / 2, 2) + Math.pow((endLng - startLng) / 2, 2)) * (Math.PI / 180);
-    }
 
     @Override
     public Loader<Cursor> onCreateLoader(int id, Bundle args) {

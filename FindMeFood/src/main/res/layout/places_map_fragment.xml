@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <!--
-    Add the SupportMapFragment inside a RelativeLayout to avoid a bug for 2.x devices.
+    Add the SupportMapFragment inside a RelativeLayout to avoid a bug for 2.x devices
+    if other views (e.g. a Drawer) will be drawn on top of the map.
     See: http://stackoverflow.com/questions/17112146/drawerlayout-with-google-maps
 -->
 <RelativeLayout
