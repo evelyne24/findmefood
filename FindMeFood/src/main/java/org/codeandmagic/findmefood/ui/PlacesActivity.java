@@ -27,6 +27,9 @@ import org.codeandmagic.findmefood.R;
 import org.codeandmagic.findmefood.Utils;
 import org.codeandmagic.findmefood.service.PlacesUpdateService;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import static org.codeandmagic.findmefood.Consts.APP_TAG;
 import static org.codeandmagic.findmefood.Consts.Intents.*;
 import static org.codeandmagic.findmefood.Consts.SavedInstanceState.*;
@@ -47,6 +50,7 @@ public class PlacesActivity extends ActionBarActivity implements LocationListene
     private LocationRequest singleUpdateRequest;
     private PlacesReceiver placesReceiver;
     private IntentFilter placesFilter;
+    private List<MyLocationUpdateListener> listeners;
 
     private boolean locationUpdateRequestInProgress = true;
     private boolean placesUpdateRequestInProgress = false;
@@ -63,6 +67,14 @@ public class PlacesActivity extends ActionBarActivity implements LocationListene
         return hasNextPage;
     }
 
+    public void registerLocationUpdateListener(MyLocationUpdateListener listener) {
+       listeners.add(listener);
+    }
+
+    public void unregisterLocationUpdateListener(MyLocationUpdateListener listener) {
+        listeners.remove(listener);
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -70,6 +82,8 @@ public class PlacesActivity extends ActionBarActivity implements LocationListene
         setContentView(R.layout.places_list_activity);
         setProgressBarIndeterminate(true);
         setSupportProgressBarVisibility(false);
+
+        listeners = new ArrayList<MyLocationUpdateListener>();
 
         placesFilter = new IntentFilter(ACTION_REQUEST_SUCCESS);
         placesFilter.addAction(ACTION_REQUEST_FAILED_NO_CONNECTION);
@@ -229,6 +243,7 @@ public class PlacesActivity extends ActionBarActivity implements LocationListene
 
                     myLocation = lastLocation;
                     startPlacesUpdateService(lastLocation);
+                    notifyLocationUpdateListeners();
                 }
                 else {
                     // The Last known location is not good enough
@@ -264,6 +279,7 @@ public class PlacesActivity extends ActionBarActivity implements LocationListene
 
             myLocation = location;
             locationUpdateRequestInProgress = false;
+            notifyLocationUpdateListeners();
             stopLocationUpdates();
 
             // Update Places based on the new Location
@@ -271,6 +287,12 @@ public class PlacesActivity extends ActionBarActivity implements LocationListene
 
         } else {
             Log.w(APP_TAG, "Received a null location.");
+        }
+    }
+
+    private void notifyLocationUpdateListeners() {
+        for(MyLocationUpdateListener listener : listeners) {
+            listener.onLocationUpdated(myLocation);
         }
     }
 

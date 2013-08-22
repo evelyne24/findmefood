@@ -7,6 +7,7 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.provider.BaseColumns;
 import android.util.Log;
+
 import org.codeandmagic.findmefood.model.OpeningHours;
 import org.codeandmagic.findmefood.model.Place;
 import org.codeandmagic.findmefood.model.PlaceGeometry;
@@ -80,6 +81,7 @@ public final class PlacesDatabase {
         place.setGeometry(new PlaceGeometry(new PlaceLocation(cursor.getDouble(cursor.getColumnIndex(Places.LATITUDE)),
                 cursor.getDouble(cursor.getColumnIndex(Places.LONGITUDE)))));
         place.setTypes(cursor.getString(cursor.getColumnIndex(Places.TYPES)));
+        place.setDistance(cursor.getDouble(cursor.getColumnIndex(Places.DISTANCE)));
         return place;
     }
 
@@ -88,9 +90,10 @@ public final class PlacesDatabase {
             return Collections.emptyList();
         }
         List<Place> places = new ArrayList<Place>();
-        while (cursor.moveToNext()) {
+        cursor.moveToFirst();
+        do {
             places.add(readPlace(cursor));
-        }
+        } while (cursor.moveToNext());
         return places;
     }
 
@@ -107,7 +110,8 @@ public final class PlacesDatabase {
         String VICINITY = "vicinity";
         String OPEN_NOW = "open_now";
         String TYPES = "types";
-        String[] PROJECTION = {_ID, ID, NAME, ICON_URL, LATITUDE, LONGITUDE, RATING, PRICE_LEVEL, VICINITY, TYPES, OPEN_NOW};
+        String DISTANCE = "distance";
+        String[] PROJECTION = {_ID, ID, NAME, ICON_URL, LATITUDE, LONGITUDE, RATING, PRICE_LEVEL, VICINITY, TYPES, OPEN_NOW, DISTANCE};
 
         Uri CONTENT_URI = Uri.withAppendedPath(AUTHORITY_URI, "places");
         String CONTENT_TYPE = "vnd.android.cursor.dir/places";

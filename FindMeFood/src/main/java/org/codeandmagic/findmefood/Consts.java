@@ -8,6 +8,8 @@ public interface Consts {
     String APP_TAG = "FindMeFood";
     String EMPTY = "";
     String SPACE = " ";
+    String METERS = "m";
+    String KILOMETERS = "km";
 
     int UNSET = -1;
     int MILLIS_PER_SECOND = 1000;
@@ -61,7 +63,9 @@ public interface Consts {
     }
 
     interface SavedInstanceState {
+        String CURRENT_PLACE = "my_place";
         String MY_LOCATION = "my_location";
+        String PLACES = "places";
         String LOCATION_UPDATE_IN_PROGRESS = "location_update_in_progress";
         String PLACES_UPDATE_IN_PROGRESS = "places_update_in_progress";
         String HAS_NEXT_PLACES = "has_next_places";

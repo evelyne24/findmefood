@@ -14,7 +14,7 @@ import static org.codeandmagic.findmefood.Consts.SPACE;
 /**
  * Created by evelyne24.
  */
-public class Place implements Parcelable {
+public class Place implements Parcelable, Comparable<Place> {
 
     private static final String TYPES_DELIMITER = "|";
 
@@ -45,6 +45,8 @@ public class Place implements Parcelable {
 
     @SerializedName("opening_hours")
     private OpeningHours openingHours;
+
+    private double distance;
 
     public Place() {
         openingHours = new OpeningHours();
@@ -158,6 +160,14 @@ public class Place implements Parcelable {
         return TextUtils.join(TYPES_DELIMITER, types);
     }
 
+    public double getDistance() {
+        return distance;
+    }
+
+    public void setDistance(double distance) {
+        this.distance = distance;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -238,5 +248,10 @@ public class Place implements Parcelable {
         sb.append(", openingHours=").append(openingHours);
         sb.append('}');
         return sb.toString();
+    }
+
+    @Override
+    public int compareTo(Place another) {
+        return Double.compare(distance, another.getDistance());
     }
 }

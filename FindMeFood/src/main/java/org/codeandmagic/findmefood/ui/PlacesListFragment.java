@@ -1,15 +1,13 @@
 package org.codeandmagic.findmefood.ui;
 
-import android.content.Context;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.location.Location;
 import android.os.Bundle;
 import android.support.v4.app.ListFragment;
 import android.support.v4.app.LoaderManager.LoaderCallbacks;
-import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
-import android.support.v4.widget.CursorAdapter;
 import android.text.Spannable;
 import android.text.SpannableStringBuilder;
 import android.text.TextUtils;
@@ -18,25 +16,32 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AbsListView;
 import android.widget.AbsListView.OnScrollListener;
+import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
+
 import org.codeandmagic.findmefood.R;
 import org.codeandmagic.findmefood.model.Place;
 import org.codeandmagic.findmefood.provider.PlacesDatabase;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Currency;
 import java.util.List;
 import java.util.Locale;
 
-import static org.codeandmagic.findmefood.Consts.Intents.*;
+import static org.codeandmagic.findmefood.Consts.Intents.EXTRA_PLACE;
+import static org.codeandmagic.findmefood.Consts.KILOMETERS;
 import static org.codeandmagic.findmefood.Consts.Loaders.LOAD_PLACES;
+import static org.codeandmagic.findmefood.Consts.METERS;
 import static org.codeandmagic.findmefood.Consts.SPACE;
-import static org.codeandmagic.findmefood.provider.PlacesDatabase.Places;
+import static org.codeandmagic.findmefood.Consts.SavedInstanceState.MY_LOCATION;
+import static org.codeandmagic.findmefood.Consts.SavedInstanceState.PLACES;
 
 /**
  * Created by evelyne24.
  */
-public class PlacesListFragment extends ListFragment implements LoaderCallbacks<Cursor> {
+public class PlacesListFragment extends ListFragment implements LoaderCallbacks<Cursor>, MyLocationUpdateListener {
 
     private static final String CURRENCY;
 
@@ -45,9 +50,12 @@ public class PlacesListFragment extends ListFragment implements LoaderCallbacks<
         CURRENCY = (currency != null) ? (currency.getSymbol().length() == 1 ? currency.getSymbol() : "$") : "$";
     }
 
+    private Location myLocation;
     private Bitmap iconFood;
     private Bitmap iconDrink;
     private EndlessScrollListener endlessScrollListener;
+    private ArrayList<Place> places = new ArrayList<Place>();
+
 
     public static PlacesListFragment newInstance(Bundle args) {
         PlacesListFragment fragment = new PlacesListFragment();
@@ -58,15 +66,38 @@ public class PlacesListFragment extends ListFragment implements LoaderCallbacks<
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        restoreInstanceState(savedInstanceState);
         endlessScrollListener = new EndlessScrollListener();
+    }
+
+    private void restoreInstanceState(Bundle savedInstanceState) {
+        if (savedInstanceState != null) {
+            myLocation = savedInstanceState.getParcelable(MY_LOCATION);
+            places = savedInstanceState.getParcelableArrayList(PLACES);
+        }
+    }
+
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        outState.putParcelable(MY_LOCATION, myLocation);
+        outState.putParcelableArrayList(PLACES, places);
+        super.onSaveInstanceState(outState);
     }
 
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
         decodePlaceTypeIcons();
-        getLoaderManager().initLoader(LOAD_PLACES, null, this);
+        ((PlacesActivity) getActivity()).registerLocationUpdateListener(this);
         getListView().setOnScrollListener(endlessScrollListener);
+        setListAdapter(new PlacesAdapter(this, places));
+        getLoaderManager().initLoader(LOAD_PLACES, null, this);
+    }
+
+    @Override
+    public void onDestroy() {
+        ((PlacesActivity) getActivity()).unregisterLocationUpdateListener(this);
+        super.onDestroy();
     }
 
     private PlacesActivity getPlacesActivity() {
@@ -80,29 +111,26 @@ public class PlacesListFragment extends ListFragment implements LoaderCallbacks<
 
     @Override
     public Loader<Cursor> onCreateLoader(int id, Bundle args) {
-        return new CursorLoader(getActivity(), Places.CONTENT_URI, Places.PROJECTION, null, null, null);
+        return new PlacesLoader(getActivity(), myLocation);
     }
 
     @Override
     public void onLoadFinished(Loader<Cursor> loader, Cursor cursor) {
         if (LOAD_PLACES == loader.getId()) {
-            if (getListAdapter() == null) {
-                setListAdapter(new PlacesCursorAdapter(this));
-            }
-            ((CursorAdapter) getListAdapter()).swapCursor(cursor);
+            places.clear();
+            places.addAll(PlacesDatabase.readPlaces(cursor));
+            Collections.sort(places);
+            ((PlacesAdapter) getListAdapter()).setPlaces(places);
         }
     }
 
     @Override
     public void onLoaderReset(Loader<Cursor> loader) {
-        if (LOAD_PLACES == loader.getId()) {
-            ((CursorAdapter) getListAdapter()).swapCursor(null);
-        }
     }
 
     @Override
     public void onListItemClick(ListView l, View v, int position, long id) {
-        Place currentPlace = PlacesDatabase.readPlace((Cursor) getListAdapter().getItem(position));
+        Place currentPlace = ((PlacesAdapter) getListAdapter()).getItem(position);
         PlacesMapFragment mapFragment = (PlacesMapFragment) getFragmentManager().findFragmentById(R.id.map_fragment);
         if (mapFragment == null) {
             Bundle args = new Bundle();
@@ -114,30 +142,47 @@ public class PlacesListFragment extends ListFragment implements LoaderCallbacks<
         }
     }
 
-    private static class PlacesCursorAdapter extends CursorAdapter {
-        private PlacesListFragment context;
+    @Override
+    public void onLocationUpdated(Location location) {
+        myLocation = location;
+        getLoaderManager().restartLoader(LOAD_PLACES, null, this);
+    }
 
-        public PlacesCursorAdapter(PlacesListFragment context) {
-            super(context.getActivity(), null, 0);
-            this.context = context;
+    private static class PlacesAdapter extends ArrayAdapter<Place> {
+        private PlacesListFragment fragment;
+        private List<Place> places;
+
+        public PlacesAdapter(PlacesListFragment fragment, List<Place> places) {
+            super(fragment.getActivity(), R.layout.place_list_item, places);
+            this.fragment = fragment;
+            this.places = places;
+        }
+
+        public void setPlaces(List<Place> places) {
+            this.places = places;
+            notifyDataSetChanged();
         }
 
         @Override
-        public View newView(Context context, Cursor cursor, ViewGroup parent) {
-            View view = View.inflate(context, R.layout.place_list_item, null);
-            view.setTag(new PlaceViewHolder(view));
-            return view;
-        }
+        public View getView(int position, View convertView, ViewGroup parent) {
+            View view = convertView;
+            PlaceViewHolder holder;
 
-        @Override
-        public void bindView(View view, Context context, Cursor cursor) {
-            Place place = PlacesDatabase.readPlace(cursor);
-            PlaceViewHolder holder = (PlaceViewHolder) view.getTag();
+            if (view == null) {
+                view = View.inflate(getContext(), R.layout.place_list_item, null);
+                holder = new PlaceViewHolder(view);
+                view.setTag(holder);
+            } else {
+                holder = (PlaceViewHolder) view.getTag();
+            }
+
+            Place place = places.get(position);
             holder.getTitleView().setText(place.getName());
-            holder.getDistanceView().setText("1 mile");
+            holder.getDistanceView().setText(formatDistance(place.getDistance()));
             holder.getSubtitleView().setText(formatExtraInfo(place));
             holder.getPriceView().setText(place.formatPriceLevel(CURRENCY));
             holder.getOpenNowView().setOpenNow(place.getOpeningHours().isOpenNow());
+            return view;
         }
 
         private SpannableStringBuilder formatExtraInfo(Place place) {
@@ -151,10 +196,10 @@ public class PlacesListFragment extends ListFragment implements LoaderCallbacks<
         private SpannableStringBuilder formatLocationType(String text, List<String> types) {
             SpannableStringBuilder builder = new SpannableStringBuilder(text);
             if (types.contains(Place.TYPE_FOOD) || types.contains(Place.TYPE_RESTAURANT)) {
-                addImageSpan(builder, context, context.iconFood);
+                addImageSpan(builder, fragment, fragment.iconFood);
             }
             if (types.contains(Place.TYPE_CAFE) || types.contains(Place.TYPE_BAR)) {
-                addImageSpan(builder.append(SPACE), context, context.iconDrink);
+                addImageSpan(builder.append(SPACE), fragment, fragment.iconDrink);
             }
             return builder;
         }
@@ -162,6 +207,16 @@ public class PlacesListFragment extends ListFragment implements LoaderCallbacks<
         private void addImageSpan(SpannableStringBuilder builder, PlacesListFragment context, Bitmap icon) {
             builder.setSpan(new ImageSpan(context.getActivity(), icon),
                     builder.length() - 1, builder.length(), Spannable.SPAN_INCLUSIVE_EXCLUSIVE);
+        }
+
+        private String formatDistance(double distance) {
+            if (Double.compare(distance, 0) == 0) {
+                return "...";
+            } else if (distance >= 1000) {
+                return String.format("%.2f %s", (distance / 1000.0), KILOMETERS);
+            } else {
+                return String.format("%.2f %s", distance, METERS);
+            }
         }
     }
 
