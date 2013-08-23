@@ -90,10 +90,11 @@ public final class PlacesDatabase {
             return Collections.emptyList();
         }
         List<Place> places = new ArrayList<Place>();
-        cursor.moveToFirst();
-        do {
+
+        cursor.moveToPosition(-1);
+        while(cursor.moveToNext()) {
             places.add(readPlace(cursor));
-        } while (cursor.moveToNext());
+        }
         return places;
     }
 

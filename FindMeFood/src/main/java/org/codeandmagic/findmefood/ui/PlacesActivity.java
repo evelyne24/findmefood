@@ -242,6 +242,7 @@ public class PlacesActivity extends ActionBarActivity implements LocationListene
                     Log.v(APP_TAG, "The last known Location is fresh enough to use.");
 
                     myLocation = lastLocation;
+                    locationUpdateRequestInProgress = false;
                     startPlacesUpdateService(lastLocation);
                     notifyLocationUpdateListeners();
                 }
@@ -377,11 +378,14 @@ public class PlacesActivity extends ActionBarActivity implements LocationListene
                 // Hide the progress bar in the ActionBar
                 setSupportProgressBarVisibility(false);
                 placesUpdateRequestInProgress = false;
-
-                // TODO show error dialogs if needed
             }
             if(ACTION_REQUEST_SUCCESS.equals(action)) {
                 hasNextPage = intent.getBooleanExtra(EXTRA_HAS_NEXT_PAGE, false);
+            }
+            else if(ACTION_REQUEST_FAILED_NO_CONNECTION.equals(action)) {
+                Toast.makeText(getApplication(), R.string.no_internet_connection, Toast.LENGTH_LONG).show();
+            }else if(ACTION_REQUEST_FAILED_UNEXPECTED_STATUS_CODE.equals(action) || ACTION_REQUEST_FAILED_UNKNOWN.equals(action)) {
+                Toast.makeText(getApplication(), R.string.unexpected_error, Toast.LENGTH_LONG).show();
             }
         }
     }

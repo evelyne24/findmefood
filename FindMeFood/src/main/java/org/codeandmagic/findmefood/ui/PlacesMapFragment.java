@@ -54,7 +54,7 @@ public class PlacesMapFragment extends Fragment implements LoaderCallbacks<Curso
     private BitmapDescriptor iconCurrentPin;
     private Place currentPlace;
 
-    private Map<Place, Marker> markers = new HashMap<Place, Marker>();
+    private Map<String, Marker> markers = new HashMap<String, Marker>();
 
     public static PlacesMapFragment newInstance(Bundle args) {
         PlacesMapFragment fragment = new PlacesMapFragment();
@@ -159,7 +159,7 @@ public class PlacesMapFragment extends Fragment implements LoaderCallbacks<Curso
             markers.clear();
 
             for (Place place : places) {
-                markers.put(place, getMarker(place));
+                markers.put(place.getId(), getMarker(place));
             }
 
             // If we have started the fragment with a Place, make sure to update it as the current one
@@ -214,17 +214,17 @@ public class PlacesMapFragment extends Fragment implements LoaderCallbacks<Curso
             if(prevCurrentMarker != null) {
                 prevCurrentMarker.remove();
             }
-            markers.put(currentPlace, getMarker(currentPlace));
+            markers.put(currentPlace.getId(), getMarker(currentPlace));
         }
 
         // Swap the new current marker from blue to red
-        Marker marker = markers.get(place);
+        Marker marker = markers.get(place.getId());
         if (marker != null) {
             marker.remove();
         }
         currentPlace = place;
         Marker currentMarker = getCurrentMarker(currentPlace);
-        markers.put(currentPlace, currentMarker);
+        markers.put(currentPlace.getId(), currentMarker);
 
         // Center map on new current marker
         centerMapOnLocation(currentMarker.getPosition());
