@@ -49,6 +49,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 Places.RATING           + " REAL DEFAULT 0, " +
                 Places.PRICE_LEVEL      + " INTEGER DEFAULT 0, " +
                 Places.OPEN_NOW         + " INTEGER DEFAULT 0, " +
+                Places.DISTANCE         + " REAL DEFAULT 0, " +
                 // Indexes
                 "UNIQUE (" + Places.ID + ") ON CONFLICT REPLACE );";
     }

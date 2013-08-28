@@ -16,6 +16,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.Window;
 import android.widget.Toast;
+
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesClient.ConnectionCallbacks;
 import com.google.android.gms.common.GooglePlayServicesClient.OnConnectionFailedListener;
@@ -23,17 +24,28 @@ import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.android.gms.location.LocationClient;
 import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
-import org.codeandmagic.findmefood.R;
 
+import org.codeandmagic.findmefood.R;
 import org.codeandmagic.findmefood.service.PlacesUpdateService;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import static org.codeandmagic.findmefood.Consts.APP_TAG;
-import static org.codeandmagic.findmefood.Consts.Intents.*;
-import static org.codeandmagic.findmefood.Consts.SavedInstanceState.*;
+import static org.codeandmagic.findmefood.Consts.Intents.ACTION_REQUEST_FAILED_NO_CONNECTION;
+import static org.codeandmagic.findmefood.Consts.Intents.ACTION_REQUEST_FAILED_UNEXPECTED_STATUS_CODE;
+import static org.codeandmagic.findmefood.Consts.Intents.ACTION_REQUEST_FAILED_UNKNOWN;
+import static org.codeandmagic.findmefood.Consts.Intents.ACTION_REQUEST_SUCCESS;
+import static org.codeandmagic.findmefood.Consts.Intents.EXTRA_HAS_NEXT_PAGE;
+import static org.codeandmagic.findmefood.Consts.Intents.EXTRA_LATITUDE;
+import static org.codeandmagic.findmefood.Consts.Intents.EXTRA_LONGITUDE;
+import static org.codeandmagic.findmefood.Consts.SavedInstanceState.HAS_NEXT_PLACES;
+import static org.codeandmagic.findmefood.Consts.SavedInstanceState.LOCATION_UPDATE_IN_PROGRESS;
+import static org.codeandmagic.findmefood.Consts.SavedInstanceState.MY_LOCATION;
+import static org.codeandmagic.findmefood.Consts.SavedInstanceState.PLACES_UPDATE_IN_PROGRESS;
 import static org.codeandmagic.findmefood.Consts.UserSettings.HIGH_PRIORITY_FAST_INTERVAL;
 import static org.codeandmagic.findmefood.Consts.UserSettings.HIGH_PRIORITY_UPDATE_INTERVAL;
-
-import static org.codeandmagic.findmefood.LocationUtils.*;
+import static org.codeandmagic.findmefood.LocationUtils.isLocationFresh;
 
 public class PlacesActivity extends ActionBarActivity implements LocationListener,
         ConnectionCallbacks, OnConnectionFailedListener {
@@ -43,11 +55,14 @@ public class PlacesActivity extends ActionBarActivity implements LocationListene
      * This code is returned in Activity.onActivityResult
     */
     public final static int CONNECTION_FAILURE_RESOLUTION_REQUEST = 9000;
+
     private Location myLocation;
     private LocationClient locationClient;
     private LocationRequest singleUpdateRequest;
     private PlacesReceiver placesReceiver;
     private IntentFilter placesFilter;
+    private List<MyLocationUpdateListener> listeners;
+
     private boolean locationUpdateRequestInProgress = true;
     private boolean placesUpdateRequestInProgress = false;
     private boolean hasNextPage;
@@ -63,6 +78,14 @@ public class PlacesActivity extends ActionBarActivity implements LocationListene
         return hasNextPage;
     }
 
+    public void registerLocationUpdateListener(MyLocationUpdateListener listener) {
+        listeners.add(listener);
+    }
+
+    public void unregisterLocationUpdateListener(MyLocationUpdateListener listener) {
+        listeners.remove(listener);
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -70,6 +93,8 @@ public class PlacesActivity extends ActionBarActivity implements LocationListene
         setContentView(R.layout.places_list_activity);
         setProgressBarIndeterminate(true);
         setSupportProgressBarVisibility(false);
+
+        listeners = new ArrayList<MyLocationUpdateListener>();
 
         placesFilter = new IntentFilter(ACTION_REQUEST_SUCCESS);
         placesFilter.addAction(ACTION_REQUEST_FAILED_NO_CONNECTION);
@@ -117,11 +142,10 @@ public class PlacesActivity extends ActionBarActivity implements LocationListene
 
     private void attachFragments() {
         FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
-        //ft.replace(R.id.places_list_fragment, PlacesListFragment.newInstance(Bundle.EMPTY));
+        ft.replace(R.id.places_list_fragment, PlacesListFragment.newInstance(Bundle.EMPTY));
 
         if (isDualPane()) {
-            //ft.replace(R.id.map_fragment, PlacesMapFragment.newInstance(Bundle.EMPTY));
-            ft.replace(R.id.map_fragment, PlacesMapFragmentWithCache.newInstance(Bundle.EMPTY));
+            ft.replace(R.id.map_fragment, PlacesMapFragment.newInstance(Bundle.EMPTY));
         }
 
         ft.commit();
@@ -229,9 +253,10 @@ public class PlacesActivity extends ActionBarActivity implements LocationListene
                     Log.v(APP_TAG, "The last known Location is fresh enough to use.");
 
                     myLocation = lastLocation;
+                    locationUpdateRequestInProgress = false;
                     startPlacesUpdateService(lastLocation);
-                }
-                else {
+                    notifyLocationUpdateListeners();
+                } else {
                     // The Last known location is not good enough
                     Log.v(APP_TAG, "The last known Location is not fresh enough to use.");
                     requestSingleLocationUpdate();
@@ -265,6 +290,7 @@ public class PlacesActivity extends ActionBarActivity implements LocationListene
 
             myLocation = location;
             locationUpdateRequestInProgress = false;
+            notifyLocationUpdateListeners();
             stopLocationUpdates();
 
             // Update Places based on the new Location
@@ -272,6 +298,12 @@ public class PlacesActivity extends ActionBarActivity implements LocationListene
 
         } else {
             Log.w(APP_TAG, "Received a null location.");
+        }
+    }
+
+    private void notifyLocationUpdateListeners() {
+        for (MyLocationUpdateListener listener : listeners) {
+            listener.onLocationUpdated(myLocation);
         }
     }
 
@@ -356,11 +388,13 @@ public class PlacesActivity extends ActionBarActivity implements LocationListene
                 // Hide the progress bar in the ActionBar
                 setSupportProgressBarVisibility(false);
                 placesUpdateRequestInProgress = false;
-
-                // TODO show error dialogs if needed
             }
-            if(ACTION_REQUEST_SUCCESS.equals(action)) {
+            if (ACTION_REQUEST_SUCCESS.equals(action)) {
                 hasNextPage = intent.getBooleanExtra(EXTRA_HAS_NEXT_PAGE, false);
+            } else if (ACTION_REQUEST_FAILED_NO_CONNECTION.equals(action)) {
+                Toast.makeText(getApplication(), R.string.no_internet_connection, Toast.LENGTH_LONG).show();
+            } else if (ACTION_REQUEST_FAILED_UNEXPECTED_STATUS_CODE.equals(action) || ACTION_REQUEST_FAILED_UNKNOWN.equals(action)) {
+                Toast.makeText(getApplication(), R.string.unexpected_error, Toast.LENGTH_LONG).show();
             }
         }
     }

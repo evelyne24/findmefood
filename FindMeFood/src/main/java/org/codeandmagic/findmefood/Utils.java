@@ -1,17 +1,10 @@
 package org.codeandmagic.findmefood;
 
 import android.content.Context;
-import android.location.Location;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 
 import java.util.ArrayList;
-
-import static java.lang.Math.max;
-import static java.lang.Math.min;
-import static org.codeandmagic.findmefood.Consts.UserSettings.DEFAULT_RADIUS;
-import static org.codeandmagic.findmefood.Consts.UserSettings.FRESH_LOCATION_INTERVAL;
-import static org.codeandmagic.findmefood.Consts.IE6;
 
 /**
  * Created by evelyne24.
@@ -30,42 +23,49 @@ public final class Utils {
         return activeNetwork != null && ConnectivityManager.TYPE_WIFI == activeNetwork.getType();
     }
 
-    /**
-     * Find all elements in first array that are not found in the second one.
-     * @param firstArray
-     * @param secondArray
-     * @param <T>
-     * @return
-     */
-    public static <T> T[] diff(T[] firstArray, T[] secondArray) {
-        ArrayList<T> diff = new ArrayList<T>();
-        for(T e1 : firstArray) {
-            for (T e2 : secondArray) {
-                if(!e1.equals(e2)) {
-                    diff.add(e1);
-                }
-            }
-        }
-        return (T[]) diff.toArray();
-    }
+    public static QTile[] QTILE_ARR_EMPTY = new QTile[]{};
 
     /**
-     * Find all elements that are found in both arrays.
+     * Find all elements in first array that are not found in the second one.
+     *
      * @param firstArray
      * @param secondArray
      * @param <T>
      * @return
      */
-    public static <T> T[] intersect(T[] firstArray, T[] secondArray) {
-        ArrayList<T> intersect = new ArrayList<T>();
-        for(T e1 : firstArray) {
-            for (T e2 : secondArray) {
-                if(e1.equals(e2)) {
-                    intersect.add(e1);
+    public static <T> T[] diff(T[] firstArray, T[] secondArray, T[] empty) {
+        if (firstArray == null) {
+            return empty;
+        }
+        if (secondArray == null) {
+            return firstArray;
+        }
+        ArrayList<T> diff = new ArrayList<T>();
+        for (T e1 : firstArray) {
+            boolean found = false;
+            for (int i = 0; i < secondArray.length; ++i) {
+                if (e1.equals(secondArray[i])) {
+                    found = true;
+                    break;
                 }
             }
+            if(!found) {
+                diff.add(e1);
+            }
         }
-        return (T[]) intersect.toArray();
+        return diff.toArray(empty);
+    }
+
+    public static <T> String print(T[] array) {
+        if (array == null || array.length == 0) {
+            return "[]";
+        }
+        final StringBuilder builder = new StringBuilder(array.getClass().getSimpleName()).append("[");
+        for (T elem : array) {
+            builder.append(elem.toString()).append(", ");
+        }
+        builder.deleteCharAt(builder.length() - 1).append("]");
+        return builder.toString();
     }
 
 }

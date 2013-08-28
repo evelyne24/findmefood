@@ -18,18 +18,17 @@ import static org.codeandmagic.findmefood.Consts.Http.*;
  */
 public class HttpClient {
 
-    private String apiKey;
+    private Context context;
 
     public HttpClient(Context context) {
-        apiKey = context.getString(R.string.google_places_api_key);
+        this.context = context;
     }
 
     public HttpResponse executeRequest(HttpRequest request) {
-        request.addParam(HttpRequest.PARAM_API_KEY, apiKey);
         InputStream inputStream = null;
 
         try {
-            URL url = new URL(request.buildUrl());
+            URL url = new URL(request.buildUrl(context));
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             connection.setReadTimeout(READ_TIMEOUT);
             connection.setConnectTimeout(CONNECT_TIMEOUT);

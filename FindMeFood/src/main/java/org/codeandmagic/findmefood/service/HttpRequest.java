@@ -1,10 +1,12 @@
 package org.codeandmagic.findmefood.service;
 
+import android.content.Context;
 import android.text.TextUtils;
 import android.util.Log;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.message.BasicNameValuePair;
+import org.codeandmagic.findmefood.R;
 
 import java.text.MessageFormat;
 import java.util.ArrayList;
@@ -76,12 +78,13 @@ public abstract class HttpRequest {
         return null;
     }
 
-    public String buildUrl() throws MalformedRequestException {
-
+    public String buildUrl(Context context) throws MalformedRequestException {
         MalformedRequestException exception = validate();
         if(exception != null) {
             throw exception;
         }
+
+        addParam(HttpRequest.PARAM_API_KEY, context.getString(R.string.google_places_api_key));
 
         for (String paramName : paramNames.keySet()) {
             String paramValue = paramValues.get(paramName);

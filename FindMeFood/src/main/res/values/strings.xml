@@ -13,5 +13,10 @@
     <string name="waiting_for_location_update">Please wait while we\'re updating your location.</string>
     <string name="waiting_to_connect_to_play_services">Waiting to connect to Google Play Services</string>
     <string name="update_already_requested">An update has already been requested</string>
+    <string name="no_internet_connection">We can\'t connect to the Internet. Please turn on your
+        WiFi or mobile network and try again.
+    </string>
+    <string name="unexpected_error">Oops, an unexpected error happened. Please try again in a bit.
+    </string>
 
 </resources>

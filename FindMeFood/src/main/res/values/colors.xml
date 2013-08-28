@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
+    <color name="current_tile">#77ff8282</color>
+    <color name="neighbour_tile">#77b0b1ff</color>
+
     <color name="place_list_item_open_now_mask">#f2f2f2</color>
     <color name="place_open_now_stripe">#CC99CC00</color>
     <color name="place_price_level">#ff5500</color>

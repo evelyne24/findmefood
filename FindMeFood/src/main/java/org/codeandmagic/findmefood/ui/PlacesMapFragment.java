@@ -12,12 +12,20 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Toast;
+
 import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.GoogleMapOptions;
 import com.google.android.gms.maps.MapsInitializer;
 import com.google.android.gms.maps.SupportMapFragment;
-import com.google.android.gms.maps.model.*;
+import com.google.android.gms.maps.model.BitmapDescriptor;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
+import com.google.android.gms.maps.model.CameraPosition;
+import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
+import com.google.android.gms.maps.model.MarkerOptions;
+
 import org.codeandmagic.findmefood.R;
 import org.codeandmagic.findmefood.model.Place;
 import org.codeandmagic.findmefood.provider.PlacesDatabase;
@@ -29,6 +37,7 @@ import java.util.Map;
 import static org.codeandmagic.findmefood.Consts.APP_TAG;
 import static org.codeandmagic.findmefood.Consts.Intents.EXTRA_PLACE;
 import static org.codeandmagic.findmefood.Consts.Loaders.LOAD_PLACES;
+import static org.codeandmagic.findmefood.Consts.SavedInstanceState.CURRENT_PLACE;
 import static org.codeandmagic.findmefood.provider.PlacesDatabase.Places;
 
 /**
@@ -36,12 +45,16 @@ import static org.codeandmagic.findmefood.provider.PlacesDatabase.Places;
  */
 public class PlacesMapFragment extends Fragment implements LoaderCallbacks<Cursor> {
 
-    private static final int MAP_ZOOM = 13;
+    private static final LatLng INITIAL_LAT_LNG = new LatLng(51.5112, -0.119824);
+    private static final int INITIAL_ZOOM_LEVEL = 13;
+
+
     private GoogleMap googleMap;
     private BitmapDescriptor iconPin;
     private BitmapDescriptor iconCurrentPin;
-    private Map<Place, Marker> placeMarkers = new HashMap<Place, Marker>();
     private Place currentPlace;
+
+    private Map<String, Marker> markers = new HashMap<String, Marker>();
 
     public static PlacesMapFragment newInstance(Bundle args) {
         PlacesMapFragment fragment = new PlacesMapFragment();
@@ -57,8 +70,21 @@ public class PlacesMapFragment extends Fragment implements LoaderCallbacks<Curso
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
+        restoreInstanceState(savedInstanceState);
         initBitmapMarkers();
         setupMapFragment();
+    }
+
+    private void restoreInstanceState(Bundle savedInstanceState) {
+        if (savedInstanceState != null) {
+            currentPlace = savedInstanceState.getParcelable(CURRENT_PLACE);
+        }
+    }
+
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        outState.putParcelable(CURRENT_PLACE, currentPlace);
+        super.onSaveInstanceState(outState);
     }
 
     private void initBitmapMarkers() {
@@ -67,7 +93,6 @@ public class PlacesMapFragment extends Fragment implements LoaderCallbacks<Curso
             MapsInitializer.initialize(getActivity());
             iconPin = BitmapDescriptorFactory.fromResource(R.drawable.ic_marker_blue);
             iconCurrentPin = BitmapDescriptorFactory.fromResource(R.drawable.ic_marker_red);
-
         } catch (GooglePlayServicesNotAvailableException e) {
             Log.w(APP_TAG, "GooglePlayServices not available.");
         }
@@ -91,7 +116,12 @@ public class PlacesMapFragment extends Fragment implements LoaderCallbacks<Curso
         FragmentManager fragmentManager = getChildFragmentManager();
         SupportMapFragment mapFragment = (SupportMapFragment) fragmentManager.findFragmentById(R.id.map);
         if (mapFragment == null) {
-            fragmentManager.beginTransaction().replace(R.id.map, SupportMapFragment.newInstance()).commit();
+            CameraPosition cameraPosition = new CameraPosition.Builder()
+                    .target(INITIAL_LAT_LNG)
+                    .zoom(INITIAL_ZOOM_LEVEL).build();
+            GoogleMapOptions options = new GoogleMapOptions().camera(cameraPosition);
+            mapFragment = SupportMapFragment.newInstance(options);
+            fragmentManager.beginTransaction().replace(R.id.map, mapFragment).commit();
         }
     }
 
@@ -108,15 +138,13 @@ public class PlacesMapFragment extends Fragment implements LoaderCallbacks<Curso
         googleMap.getUiSettings().setZoomControlsEnabled(true);
         googleMap.setMyLocationEnabled(true);
 
-        // initLoader() gets triggered before the GoogleMap is ready after a rotation!
+        // initLoader gets triggered before the GoogleMap is ready after a rotation!
         getLoaderManager().restartLoader(LOAD_PLACES, null, this);
     }
 
     private void centerMapOnLocation(LatLng location) {
         googleMap.moveCamera(CameraUpdateFactory.newLatLng(location));
-        googleMap.animateCamera(CameraUpdateFactory.zoomTo(MAP_ZOOM));
     }
-
 
 
     @Override
@@ -128,10 +156,10 @@ public class PlacesMapFragment extends Fragment implements LoaderCallbacks<Curso
     public void onLoadFinished(Loader<Cursor> loader, Cursor cursor) {
         if (LOAD_PLACES == loader.getId()) {
             List<Place> places = PlacesDatabase.readPlaces(cursor);
-            placeMarkers.clear();
+            markers.clear();
 
             for (Place place : places) {
-                placeMarkers.put(place, getMarker(place));
+                markers.put(place.getId(), getMarker(place));
             }
 
             // If we have started the fragment with a Place, make sure to update it as the current one
@@ -139,6 +167,8 @@ public class PlacesMapFragment extends Fragment implements LoaderCallbacks<Curso
             if (googleMap != null && args != null && args.containsKey(EXTRA_PLACE)) {
                 Place place = args.getParcelable(EXTRA_PLACE);
                 refreshCurrentPlace(place);
+            } else if (currentPlace != null) {
+                refreshCurrentPlace(currentPlace);
             }
         }
     }
@@ -171,7 +201,7 @@ public class PlacesMapFragment extends Fragment implements LoaderCallbacks<Curso
     }
 
     private void clearAllMarkers() {
-        placeMarkers.clear();
+        markers.clear();
         if (googleMap != null) {
             googleMap.clear();
         }
@@ -180,22 +210,25 @@ public class PlacesMapFragment extends Fragment implements LoaderCallbacks<Curso
     public void refreshCurrentPlace(Place place) {
         // Swap the previous current marker from red to blue
         if (currentPlace != null) {
-            Marker prevCurrentMarker = placeMarkers.get(currentPlace);
-            prevCurrentMarker.remove();
-            placeMarkers.put(currentPlace, getMarker(currentPlace));
+            Marker prevCurrentMarker = markers.get(currentPlace);
+            if(prevCurrentMarker != null) {
+                prevCurrentMarker.remove();
+            }
+            markers.put(currentPlace.getId(), getMarker(currentPlace));
         }
 
         // Swap the new current marker from blue to red
-        Marker marker = placeMarkers.get(place);
+        Marker marker = markers.get(place.getId());
         if (marker != null) {
             marker.remove();
         }
         currentPlace = place;
         Marker currentMarker = getCurrentMarker(currentPlace);
-        placeMarkers.put(currentPlace, currentMarker);
+        markers.put(currentPlace.getId(), currentMarker);
 
         // Center map on new current marker
         centerMapOnLocation(currentMarker.getPosition());
         currentMarker.showInfoWindow();
     }
+
 }

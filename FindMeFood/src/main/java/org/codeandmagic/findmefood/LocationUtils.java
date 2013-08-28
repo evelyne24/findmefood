@@ -14,8 +14,8 @@ import static org.codeandmagic.findmefood.Consts.UserSettings.FRESH_LOCATION_INT
 public class LocationUtils {
 
     public static final int STARTING_ZOOM_LEVEL = 15;
-    public static final int DATA_FETCH_ZOOM_LEVEL = 12;
-    public static final int CLUSTERING_ZOOM_LEVEL = 12;
+    public static final int DATA_FETCH_ZOOM_LEVEL = 10;
+    public static final int CLUSTERING_ZOOM_LEVEL = 13;
 
     public static final double EARTH_RADIUS = 6378137;
     public static final double MIN_LATITUDE = -85.05112878;
