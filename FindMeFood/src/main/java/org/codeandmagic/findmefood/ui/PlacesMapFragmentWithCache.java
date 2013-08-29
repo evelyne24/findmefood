@@ -25,6 +25,8 @@ import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptor;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.CameraPosition;
+import com.google.android.gms.maps.model.Circle;
+import com.google.android.gms.maps.model.CircleOptions;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
@@ -32,17 +34,17 @@ import com.google.android.gms.maps.model.Polygon;
 import com.google.android.gms.maps.model.PolygonOptions;
 
 import org.codeandmagic.findmefood.QTile;
-import org.codeandmagic.findmefood.QuadKey;
 import org.codeandmagic.findmefood.R;
 import org.codeandmagic.findmefood.ZoomLevel;
 import org.codeandmagic.findmefood.model.Place;
-import org.codeandmagic.findmefood.model.PlaceLocation;
 import org.codeandmagic.findmefood.service.HttpGetPlaces;
 import org.codeandmagic.findmefood.service.HttpResponseParser;
 
-import java.text.MessageFormat;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import static org.codeandmagic.findmefood.Consts.APP_TAG;
 import static org.codeandmagic.findmefood.LocationUtils.CLUSTERING_ZOOM_LEVEL;
@@ -62,10 +64,13 @@ public class PlacesMapFragmentWithCache extends Fragment implements OnCameraChan
     private RequestQueue requestQueue;
     private HttpResponseParser responseParser;
 
-    private HashMap<QTile, Polygon> drawnTiles = new HashMap<QTile, Polygon>();
+    private Map<QTile, Polygon> drawnTiles = new HashMap<QTile, Polygon>();
+    private Map<QTile, List<Marker>> markers = new HashMap<QTile, List<Marker>>();
     private QTile[] visibleTiles = QTILE_ARR_EMPTY;
+
     private int currentTileColor;
     private int neighbourTileColor;
+    private int tileCenterColor;
 
     public static PlacesMapFragmentWithCache newInstance(Bundle args) {
         PlacesMapFragmentWithCache fragment = new PlacesMapFragmentWithCache();
@@ -79,6 +84,7 @@ public class PlacesMapFragmentWithCache extends Fragment implements OnCameraChan
         setRetainInstance(true);
         currentTileColor = getResources().getColor(R.color.current_tile);
         neighbourTileColor = getResources().getColor(R.color.neighbour_tile);
+        tileCenterColor = getResources().getColor(R.color.tile_center);
     }
 
     @Override
@@ -152,7 +158,7 @@ public class PlacesMapFragmentWithCache extends Fragment implements OnCameraChan
         final QTile centerTile = QTile.forCenter(latLng, zoom);
         centerTile.loadNeighbours();
 
-        Log.v(APP_TAG, centerTile.toString());
+        //Log.v(APP_TAG, centerTile.toString());
 
         QTile[] newTiles = new QTile[4];
         newTiles[0] = centerTile;
@@ -163,82 +169,92 @@ public class PlacesMapFragmentWithCache extends Fragment implements OnCameraChan
         QTile[] removedTiles = diff(visibleTiles, newTiles, QTILE_ARR_EMPTY);
         QTile[] addedTiles = diff(newTiles, visibleTiles, QTILE_ARR_EMPTY);
 
-        Log.d(APP_TAG, "Visible drawnTiles: " + visibleTiles.length);
-        Log.d(APP_TAG, "New drawnTiles: " + newTiles.length);
-        Log.d(APP_TAG, "Removed Tiles: " + removedTiles.length);
-        Log.d(APP_TAG, "Added drawnTiles: " + addedTiles.length);
+        Log.d(APP_TAG, "Visible tiles: " + visibleTiles.length);
+        Log.d(APP_TAG, "New tiles: " + newTiles.length);
+        Log.d(APP_TAG, "Removed tiles: " + removedTiles.length);
+        Log.d(APP_TAG, "Added tiles: " + addedTiles.length);
 
         // Delete markers for all remove drawnTiles
-        for (QTile removedTile : removedTiles) {
-            Marker[] markers = LOCATION_CACHE.get(removedTile);
-            if (markers != null) {
-                for (Marker marker : markers) {
-                    marker.remove();
-                }
-            }
-            drawnTiles.get(removedTile).remove();
+        for (QTile tile : removedTiles) {
+            removePlacesForQTile(tile);
+        }
+
+        // Delete all tile debug squares
+        for(Map.Entry<QTile, Polygon> entry : drawnTiles.entrySet()) {
+           entry.getValue().remove();
+        }
+        drawnTiles.clear();
+
+        // Add all new tile debug squares
+        for(QTile tile : newTiles) {
+            drawnTiles.put(tile, drawQTile(tile, tile.equals(centerTile) ? currentTileColor : neighbourTileColor));
         }
 
         // Add markers for new added drawnTiles:
         // First verify if the drawnTiles are in cache.
         // If not, request places for the new drawnTiles.
-        for (QTile addedTile : addedTiles) {
-            if (LOCATION_CACHE.get(addedTile) != null) {
-                displayCachedMarkers(addedTile);
+        for (QTile tile : addedTiles) {
+            if (LOCATION_CACHE.hasTileInCache(tile)) {
+                addPlacesForQTile(tile, LOCATION_CACHE.get(tile.quadKey));
             } else {
-                requestPlaces(addedTile, latLng);
+                requestPlaces(tile);
             }
-
-            drawnTiles.put(addedTile, drawQTile(addedTile, addedTile.equals(centerTile) ? currentTileColor : neighbourTileColor));
         }
 
         visibleTiles = newTiles;
     }
 
-    private Polygon drawQTile(QTile tile, int color) {
-        return googleMap.addPolygon(new PolygonOptions()
-                .add(tile.topLeft, tile.topRight, tile.bottomRight, tile.bottomLeft)
-                .strokeColor(Color.BLUE)
-                .strokeWidth(2)
-                .fillColor(color));
+    private void removePlacesForQTile(QTile qTile) {
+        List<Marker> list = markers.get(qTile);
+        if (list != null) {
+            for (Marker marker : list) {
+                marker.remove();
+            }
+        }
+        markers.remove(qTile);
     }
 
-    private void requestPlaces(final QTile qTile, final LatLng centerLatLng) {
-        final HttpGetPlaces request = new HttpGetPlaces().setLocation(centerLatLng.latitude, centerLatLng.longitude).setRadius(qTile.radius);
+    private void addPlacesForQTile(QTile qTile, Collection<Place> places) {
+        List<Marker> list = new ArrayList<Marker>();
+        for (Place place : places) {
+            MarkerOptions markerOptions = new MarkerOptions()
+                    .icon(iconPin)
+                    .position(place.getLatLng())
+                    .title(place.getName())
+                    .snippet(place.getVicinity());
+
+            list.add(googleMap.addMarker(markerOptions));
+        }
+        markers.put(qTile, list);
+    }
+
+
+    private void requestPlaces(final QTile qTile) {
+        Toast.makeText(getActivity(), "Getting new places from server.", Toast.LENGTH_SHORT).show();
+
+        final HttpGetPlaces request = new HttpGetPlaces()
+                .setLocation(qTile.center.latitude, qTile.center.longitude)
+                .setRadius(qTile.radius);
+
         final ZoomLevel clusteringZoomLevel = ZoomLevel.get(CLUSTERING_ZOOM_LEVEL);
 
         final String url = request.buildUrl(getActivity());
         Log.i(APP_TAG, "Url: " + url);
+
         requestQueue.add(new StringRequest(Request.Method.GET, url, new Response.Listener<String>() {
             @Override
             public void onResponse(String response) {
                 final HttpResponseParser.PlaceParseResponse parseResponse = responseParser.parsePlaces(response);
                 final int size = parseResponse.places.size();
-                final ArrayList<Marker> markers = new ArrayList<Marker>();
 
                 for (int i = 0; i < size; ++i) {
-                    Place place = parseResponse.places.get(i);
-                    PlaceLocation location = place.getGeometry().getLocation();
-                    LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
-                    String quadKey = QuadKey.getQuadKey(latLng, clusteringZoomLevel);
-                    Log.d(APP_TAG, latLng + "->" + quadKey + "->" + qTile.quadKey);
-
-                    // Check if this place is in the cache
-                    if (quadKey.startsWith(qTile.quadKey)) {
-                        MarkerOptions markerOptions = new MarkerOptions()
-                                .icon(iconPin)
-                                .position(latLng)
-                                .title(place.getName())
-                                .snippet(place.getVicinity());
-
-                        markers.add(googleMap.addMarker(markerOptions));
-                    }
+                    LOCATION_CACHE.add(qTile.quadKey, parseResponse.places.get(i));
+                    //Log.v(APP_TAG, latLng + "->" + quadKey + "->" + qTile.quadKey);
                 }
 
-                Log.v(APP_TAG, MessageFormat.format("Fetched {0} places and added {1} to cache.", size, markers.size()));
-                LOCATION_CACHE.add(qTile, markers.toArray(new Marker[markers.size()]));
-                displayCachedMarkers(qTile);
-
+                LOCATION_CACHE.addTileInCache(qTile);
+                Collection<Place> places = LOCATION_CACHE.get(qTile.quadKey);
+                addPlacesForQTile(qTile, places);
             }
         }, new Response.ErrorListener() {
             @Override
@@ -249,14 +265,23 @@ public class PlacesMapFragmentWithCache extends Fragment implements OnCameraChan
         ));
     }
 
-    private void displayCachedMarkers(QTile qTile) {
-        Marker[] markers = LOCATION_CACHE.get(qTile);
-        if (markers != null) {
-            for (Marker marker : markers) {
-                googleMap.addMarker(new MarkerOptions().position(marker.getPosition()).title(marker.getTitle()).icon(iconPin));
-            }
-        }
+    private Polygon drawQTile(QTile tile, int color) {
+        //drawCenter(tile, tileCenterColor);
+
+        return googleMap.addPolygon(new PolygonOptions()
+                .add(tile.topLeft, tile.topRight, tile.bottomRight, tile.bottomLeft)
+                .strokeColor(Color.BLUE)
+                .strokeWidth(2)
+                .fillColor(color));
     }
 
+    private Circle drawCenter(QTile tile, int color) {
+        return googleMap.addCircle(new CircleOptions()
+                .center(tile.center)
+                .radius(tile.radius)
+                .strokeColor(Color.BLACK)
+                .strokeWidth(3)
+                .fillColor(color));
+    }
 
 }

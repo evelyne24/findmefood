@@ -3,6 +3,7 @@
 
     <color name="current_tile">#77ff8282</color>
     <color name="neighbour_tile">#77b0b1ff</color>
+    <color name="tile_center">#88ff5500</color>
 
     <color name="place_list_item_open_now_mask">#f2f2f2</color>
     <color name="place_open_now_stripe">#CC99CC00</color>

@@ -1,13 +1,13 @@
 package org.codeandmagic.findmefood;
 
 import android.graphics.Point;
-import android.location.Location;
 
 import com.google.android.gms.maps.model.LatLng;
 
 import static org.codeandmagic.findmefood.QuadKey.latLngToWorldPoint;
 import static org.codeandmagic.findmefood.QuadKey.worldPointToLatLng;
 import static org.codeandmagic.findmefood.QuadKey.worldPointToTileXY;
+import static org.codeandmagic.findmefood.LocationUtils.*;
 
 /**
  * Created by evelyne24.
@@ -52,9 +52,7 @@ public class QTile {
 
         this.center = new LatLng(halfY, halfX);
 
-        float[] results = new float[1];
-        Location.distanceBetween(center.latitude, center.longitude, topLeft.latitude, topLeft.longitude, results);
-        this.radius = results[0];
+        this.radius = getDistanceBetween(center.latitude, center.longitude, topLeft.latitude, topLeft.longitude);
 
         this.quadKey = getQuadKey();
     }

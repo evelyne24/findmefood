@@ -3,6 +3,8 @@ package org.codeandmagic.findmefood.model;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.text.TextUtils;
+
+import com.google.android.gms.maps.model.LatLng;
 import com.google.gson.annotations.SerializedName;
 
 import java.util.Arrays;
@@ -47,6 +49,8 @@ public class Place implements Parcelable, Comparable<Place> {
     private OpeningHours openingHours;
 
     private double distance;
+
+    private transient LatLng latLng;
 
     public Place() {
         openingHours = new OpeningHours();
@@ -168,6 +172,13 @@ public class Place implements Parcelable, Comparable<Place> {
         this.distance = distance;
     }
 
+    public synchronized LatLng getLatLng() {
+        if(latLng == null) {
+            latLng = new LatLng(geometry.getLocation().getLatitude(), geometry.getLocation().getLongitude());
+        }
+        return latLng;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -175,40 +186,14 @@ public class Place implements Parcelable, Comparable<Place> {
 
         Place place = (Place) o;
 
-        if (Double.compare(place.distance, distance) != 0) return false;
-        if (priceLevel != place.priceLevel) return false;
-        if (Double.compare(place.rating, rating) != 0) return false;
-        if (geometry != null ? !geometry.equals(place.geometry) : place.geometry != null)
-            return false;
-        if (iconUrl != null ? !iconUrl.equals(place.iconUrl) : place.iconUrl != null) return false;
         if (!id.equals(place.id)) return false;
-        if (name != null ? !name.equals(place.name) : place.name != null) return false;
-        if (openingHours != null ? !openingHours.equals(place.openingHours) : place.openingHours != null)
-            return false;
-        if (types != null ? !types.equals(place.types) : place.types != null) return false;
-        if (vicinity != null ? !vicinity.equals(place.vicinity) : place.vicinity != null)
-            return false;
 
         return true;
     }
 
     @Override
     public int hashCode() {
-        int result;
-        long temp;
-        result = id.hashCode();
-        result = 31 * result + (name != null ? name.hashCode() : 0);
-        result = 31 * result + (iconUrl != null ? iconUrl.hashCode() : 0);
-        result = 31 * result + (vicinity != null ? vicinity.hashCode() : 0);
-        result = 31 * result + (types != null ? types.hashCode() : 0);
-        temp = Double.doubleToLongBits(rating);
-        result = 31 * result + (int) (temp ^ (temp >>> 32));
-        result = 31 * result + priceLevel;
-        result = 31 * result + (geometry != null ? geometry.hashCode() : 0);
-        result = 31 * result + (openingHours != null ? openingHours.hashCode() : 0);
-        temp = Double.doubleToLongBits(distance);
-        result = 31 * result + (int) (temp ^ (temp >>> 32));
-        return result;
+        return id.hashCode();
     }
 
     @Override
