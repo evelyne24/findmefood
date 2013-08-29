@@ -95,7 +95,7 @@ public abstract class HttpRequest {
             } else if (defaultValue != null) {
                 params.add(new BasicNameValuePair(paramName, defaultValue));
             } else {
-                Log.w(APP_TAG, MessageFormat.format("Ignoring parameter {0}.", paramName));
+                //Log.w(APP_TAG, MessageFormat.format("Ignoring parameter {0}.", paramName));
             }
         }
 

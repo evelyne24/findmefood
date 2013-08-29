@@ -43,20 +43,19 @@ import org.codeandmagic.findmefood.service.HttpResponseParser;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static org.codeandmagic.findmefood.Consts.APP_TAG;
-import static org.codeandmagic.findmefood.LocationUtils.CLUSTERING_ZOOM_LEVEL;
-import static org.codeandmagic.findmefood.LocationUtils.DATA_FETCH_ZOOM_LEVEL;
-import static org.codeandmagic.findmefood.LocationUtils.STARTING_ZOOM_LEVEL;
+import static org.codeandmagic.findmefood.LocationUtils.MIN_DATA_FETCH_ZOOM;
+import static org.codeandmagic.findmefood.LocationUtils.INITIAL_DISPLAY_ZOOM;
 import static org.codeandmagic.findmefood.MyApplication.LOCATION_CACHE;
 import static org.codeandmagic.findmefood.Utils.QTILE_ARR_EMPTY;
 import static org.codeandmagic.findmefood.Utils.diff;
 
-/**
- * Created by evelyne24.
- */
+// TODO If Google Places API gives back the same place for two different QTiles it must be drawn only once
 public class PlacesMapFragmentWithCache extends Fragment implements OnCameraChangeListener {
 
     private GoogleMap googleMap;
@@ -67,6 +66,8 @@ public class PlacesMapFragmentWithCache extends Fragment implements OnCameraChan
     private Map<QTile, Polygon> drawnTiles = new HashMap<QTile, Polygon>();
     private Map<QTile, List<Marker>> markers = new HashMap<QTile, List<Marker>>();
     private QTile[] visibleTiles = QTILE_ARR_EMPTY;
+
+    private Toast toast;
 
     private int currentTileColor;
     private int neighbourTileColor;
@@ -129,7 +130,7 @@ public class PlacesMapFragmentWithCache extends Fragment implements OnCameraChan
         FragmentManager fragmentManager = getChildFragmentManager();
         SupportMapFragment mapFragment = (SupportMapFragment) fragmentManager.findFragmentById(R.id.map);
         if (mapFragment == null) {
-            CameraPosition cameraPosition = new CameraPosition.Builder().zoom(STARTING_ZOOM_LEVEL).target(new LatLng(51.5112, -0.119824)).build();
+            CameraPosition cameraPosition = new CameraPosition.Builder().zoom(INITIAL_DISPLAY_ZOOM).target(new LatLng(51.5112, -0.119824)).build();
             mapFragment = SupportMapFragment.newInstance(new GoogleMapOptions().camera(cameraPosition));
             fragmentManager.beginTransaction().replace(R.id.map, mapFragment).commit();
         }
@@ -151,10 +152,21 @@ public class PlacesMapFragmentWithCache extends Fragment implements OnCameraChan
         googleMap.setMyLocationEnabled(true);
     }
 
+    private ZoomLevel getDataFetchZoom(float cameraZoom) {
+        int seeAllScreenZoom = (int) (cameraZoom - 1);
+        if(seeAllScreenZoom < 1) {
+            return ZoomLevel.Z1;
+        }
+        if(seeAllScreenZoom > MIN_DATA_FETCH_ZOOM) {
+            return ZoomLevel.get(MIN_DATA_FETCH_ZOOM);
+        }
+        return  ZoomLevel.get(seeAllScreenZoom);
+    }
+
     @Override
     public void onCameraChange(CameraPosition cameraPosition) {
         final LatLng latLng = cameraPosition.target;
-        final ZoomLevel zoom = ZoomLevel.get(DATA_FETCH_ZOOM_LEVEL);
+        final ZoomLevel zoom = getDataFetchZoom(cameraPosition.zoom);
         final QTile centerTile = QTile.forCenter(latLng, zoom);
         centerTile.loadNeighbours();
 
@@ -169,10 +181,10 @@ public class PlacesMapFragmentWithCache extends Fragment implements OnCameraChan
         QTile[] removedTiles = diff(visibleTiles, newTiles, QTILE_ARR_EMPTY);
         QTile[] addedTiles = diff(newTiles, visibleTiles, QTILE_ARR_EMPTY);
 
-        Log.d(APP_TAG, "Visible tiles: " + visibleTiles.length);
-        Log.d(APP_TAG, "New tiles: " + newTiles.length);
-        Log.d(APP_TAG, "Removed tiles: " + removedTiles.length);
-        Log.d(APP_TAG, "Added tiles: " + addedTiles.length);
+        //Log.d(APP_TAG, "Visible tiles: " + visibleTiles.length);
+        //Log.d(APP_TAG, "New tiles: " + newTiles.length);
+        //Log.d(APP_TAG, "Removed tiles: " + removedTiles.length);
+        //Log.d(APP_TAG, "Added tiles: " + addedTiles.length);
 
         // Delete markers for all remove drawnTiles
         for (QTile tile : removedTiles) {
@@ -193,11 +205,12 @@ public class PlacesMapFragmentWithCache extends Fragment implements OnCameraChan
         // Add markers for new added drawnTiles:
         // First verify if the drawnTiles are in cache.
         // If not, request places for the new drawnTiles.
-        for (QTile tile : addedTiles) {
-            if (LOCATION_CACHE.hasTileInCache(tile)) {
-                addPlacesForQTile(tile, LOCATION_CACHE.get(tile.quadKey));
+        for (QTile qTile : addedTiles) {
+            Collection<Place> places = LOCATION_CACHE.get(qTile);
+            if (places != null) {
+                addPlacesForQTile(qTile, places);
             } else {
-                requestPlaces(tile);
+                requestPlaces(qTile);
             }
         }
 
@@ -230,13 +243,16 @@ public class PlacesMapFragmentWithCache extends Fragment implements OnCameraChan
 
 
     private void requestPlaces(final QTile qTile) {
-        Toast.makeText(getActivity(), "Getting new places from server.", Toast.LENGTH_SHORT).show();
+        if(toast != null) {
+            toast.cancel();
+        }
+        toast = Toast.makeText(getActivity(), "Get places for QTile " + qTile.quadKey, Toast.LENGTH_SHORT);
+        toast.show();
 
+        // TODO If Google API get the radius of the inner circle of one tile because Google might give places outside that QTile
         final HttpGetPlaces request = new HttpGetPlaces()
                 .setLocation(qTile.center.latitude, qTile.center.longitude)
                 .setRadius(qTile.radius);
-
-        final ZoomLevel clusteringZoomLevel = ZoomLevel.get(CLUSTERING_ZOOM_LEVEL);
 
         final String url = request.buildUrl(getActivity());
         Log.i(APP_TAG, "Url: " + url);
@@ -245,15 +261,9 @@ public class PlacesMapFragmentWithCache extends Fragment implements OnCameraChan
             @Override
             public void onResponse(String response) {
                 final HttpResponseParser.PlaceParseResponse parseResponse = responseParser.parsePlaces(response);
-                final int size = parseResponse.places.size();
 
-                for (int i = 0; i < size; ++i) {
-                    LOCATION_CACHE.add(qTile.quadKey, parseResponse.places.get(i));
-                    //Log.v(APP_TAG, latLng + "->" + quadKey + "->" + qTile.quadKey);
-                }
-
-                LOCATION_CACHE.addTileInCache(qTile);
-                Collection<Place> places = LOCATION_CACHE.get(qTile.quadKey);
+                LOCATION_CACHE.add(qTile, parseResponse.places);
+                Collection<Place> places = LOCATION_CACHE.get(qTile);
                 addPlacesForQTile(qTile, places);
             }
         }, new Response.ErrorListener() {
